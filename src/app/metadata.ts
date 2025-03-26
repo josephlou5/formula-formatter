@@ -1,11 +1,9 @@
 import { Metadata } from "next";
 
 /** Title of the app. */
-// TODO: Update title.
-export const TITLE = "App Title";
+export const TITLE = "Formula Formatter";
 /** GitHub repo name (which becomes the base path). */
-// TODO: Update base path.
-export const BASE_PATH = "app-title";
+export const BASE_PATH = "formula-formatter";
 
 /** Creates Metadata for a page. */
 export function metadataForPage(pageTitle: string = ""): Metadata {
@@ -16,7 +14,6 @@ export function metadataForPage(pageTitle: string = ""): Metadata {
   return {
     title,
     applicationName: TITLE,
-    // TODO: Update description.
-    description: "App description",
+    description: "A static webpage to format Google Sheets Formulas.",
   };
 }

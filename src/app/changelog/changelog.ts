@@ -18,8 +18,8 @@ export type Version = {
 export const CHANGELOG: Version[] = [
   {
     version: [0, 1],
-    timestamp: "TODO",
-    description: [{ text: "Initial release" }],
+    timestamp: "2025-03-26 08:56",
+    description: [{ text: "Initial commit" }],
   },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
