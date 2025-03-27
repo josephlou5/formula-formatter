@@ -14,9 +14,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="p-3">
-          <Breadcrumbs />
-          {children}
+        <div className="d-flex flex-column justify-content-between vh-100 p-2">
+          <div>
+            <Breadcrumbs />
+            {children}
+          </div>
           <Footer />
         </div>
       </body>

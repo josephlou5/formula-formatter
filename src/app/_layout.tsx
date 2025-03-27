@@ -6,6 +6,7 @@ import {
   useSelectedLayoutSegments,
 } from "next/navigation";
 
+import { getCurrentVersion } from "./changelog/changelog";
 import { BASE_PATH } from "./metadata";
 
 const NOT_FOUND_SEGMENT = "/_not-found";
@@ -70,7 +71,11 @@ export function Footer() {
   const githubLink = `https://github.com/josephlou5/${BASE_PATH}`;
   return (
     <div className="text-secondary" style={{ fontSize: "0.8em" }}>
-      See the source code at{" "}
+      Version:{" "}
+      <Link href="/changelog" className="text-reset">
+        {getCurrentVersion()}
+      </Link>
+      . See the source code at{" "}
       <a href={githubLink} target="_blank">
         {githubLink}
       </a>
