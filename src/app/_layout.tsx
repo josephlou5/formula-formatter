@@ -26,7 +26,7 @@ export function Breadcrumbs() {
   const href: string[] = [];
   return (
     <nav aria-label="breadcrumb">
-      <ol className="breadcrumb">
+      <ol className="breadcrumb mb-2">
         <li className="breadcrumb-item">
           <Link href="../">Home</Link>
         </li>

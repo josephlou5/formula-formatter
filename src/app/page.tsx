@@ -1,13 +1,29 @@
 "use client";
 
-import { TITLE } from "./metadata";
+import { ChangeEvent, useState } from "react";
+
+import "./style.css";
 
 export default function Page() {
-  return (
-    <>
-      <div className="h1 mb-2">{TITLE}</div>
+  const [text, setText] = useState("=");
 
-      <div className="mb-2">Page Content</div>
-    </>
+  function onChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    let newText = event.target.value;
+    if (!newText.startsWith("=")) {
+      // FIXME: When deleting the equals sign, the cursor jumps to the end.
+      newText = "=" + newText;
+    }
+    setText(newText);
+  }
+
+  return (
+    <div className="flex-grow-1">
+      <textarea
+        id="editor"
+        className="form-control h-100 p-1"
+        value={text}
+        onChange={onChange}
+      ></textarea>
+    </div>
   );
 }

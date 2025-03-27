@@ -30,6 +30,11 @@ export const CHANGELOG: Version[] = [
       { text: "Slightly reduced padding around the page" },
     ],
   },
+  {
+    version: [0, 3],
+    timestamp: "2025-03-27 19:55",
+    description: [{ text: "Add full-page textarea formula editor" }],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
