@@ -1,4 +1,4 @@
-.editor-container > * {
+.editor-font {
   font-family: "Google Sans Mono", "Roboto Mono", Menlo, monospace;
   font-size: 16px;
   line-height: 1.3em;
@@ -6,4 +6,5 @@
 
 #editor {
   resize: none;
+  overflow-x: scroll;
 }

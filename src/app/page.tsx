@@ -40,23 +40,30 @@ export default function Page() {
   });
 
   function setLines(lines: string[]) {
-    setText(
-      lines
-        .map((line, i) => (i === 0 ? line.trim() : line.trimEnd()))
-        .join("\n")
-    );
+    setText(lines.join("\n"));
+  }
+
+  function handleTextareaSizing() {
+    if (!textareaRef.current) return;
+    textareaRef.current.style.height = "1px";
+    textareaRef.current.style.height = `max(${textareaRef.current.scrollHeight}px, 100%)`;
+    textareaRef.current.style.width = "1px";
+    textareaRef.current.style.width = `max(${textareaRef.current.scrollWidth}px, 100%)`;
   }
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
     let newText = event.currentTarget.value;
     if (!newText.startsWith("=")) {
       // FIXME: When deleting the equals sign, the cursor jumps to the end.
+      // FIXME: When the cursor is before the equals sign and the user types,
+      // an equals sign will be inserted.
       newText = "=" + newText;
     }
     const newLines = newText.split("\n");
     // Update the selection.
     handleSelect(event, newLines);
     setLines(newLines);
+    handleTextareaSizing();
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -97,6 +104,7 @@ export default function Page() {
           }
           const line = newLines[lineNum];
           const prevLength = line.length;
+          if (prevLength === 0) continue;
           // Find out how many tabs there are at the start.
           let numSpaces = 0;
           for (let i = 0; i < line.length; i++) {
@@ -116,9 +124,8 @@ export default function Page() {
             // Indent.
             numTabs++;
           }
-          newLines[lineNum] = (
-            " ".repeat(TAB_SPACES * numTabs) + line.trimStart()
-          ).trimEnd();
+          newLines[lineNum] =
+            " ".repeat(TAB_SPACES * numTabs) + line.slice(numSpaces);
 
           const lengthDelta = newLines[lineNum].length - prevLength;
           if (lineNum === startPos.lineNum) {
@@ -138,35 +145,37 @@ export default function Page() {
   }
 
   function handleSelect(
-    event: SyntheticEvent<HTMLTextAreaElement>,
+    { currentTarget }: SyntheticEvent<HTMLTextAreaElement>,
     currLines: string[] | null = null
   ) {
     currLines ??= lines;
-    const textarea = event.currentTarget;
     selectionRef.current.start = convertIndexToPosition(
       currLines,
-      textarea.selectionStart
+      currentTarget.selectionStart
     );
     selectionRef.current.end = convertIndexToPosition(
       currLines,
-      textarea.selectionEnd
+      currentTarget.selectionEnd
     );
   }
 
   return (
-    <div className="flex-grow-1 d-flex editor-container">
+    <div className="flex-grow-1 d-flex">
       <div
         className="d-flex flex-column text-end text-secondary me-2"
         style={{ paddingTop: "5px" }}
       >
         {lines.map((line, index) => (
-          <div key={index}>{index + 1}</div>
+          <div key={index} className="editor-font">
+            {index + 1}
+          </div>
         ))}
       </div>
       <textarea
         ref={textareaRef}
         id="editor"
-        className="form-control h-100 p-1"
+        className="form-control editor-font overflow-y-hidden p-1"
+        style={{ width: "100%", height: "100%" }}
         value={text}
         autoComplete="off"
         onChange={handleChange}

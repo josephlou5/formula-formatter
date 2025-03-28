@@ -42,6 +42,11 @@ export const CHANGELOG: Version[] = [
       { text: "Added indent and dedent functionality in editor using tab key" },
     ],
   },
+  {
+    version: [0, 5],
+    timestamp: "2025-03-28 02:58",
+    description: [{ text: "Added automatic height expansion to the editor" }],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
