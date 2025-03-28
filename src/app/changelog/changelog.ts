@@ -33,7 +33,14 @@ export const CHANGELOG: Version[] = [
   {
     version: [0, 3],
     timestamp: "2025-03-27 19:55",
-    description: [{ text: "Add full-page textarea formula editor" }],
+    description: [{ text: "Added full-page textarea formula editor" }],
+  },
+  {
+    version: [0, 4],
+    timestamp: "2025-03-28 02:02",
+    description: [
+      { text: "Added indent and dedent functionality in editor using tab key" },
+    ],
   },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
