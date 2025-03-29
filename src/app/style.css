@@ -45,3 +45,22 @@
   /* Above the content so the caret is visible. */
   z-index: 1;
 }
+
+/** Styles for text overlay. */
+
+.indent-level {
+  position: relative;
+
+  &::before {
+    border-left: 1px solid rgba(0 0 0 / 0.2);
+    content: "";
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}
+
+.trailing-spaces {
+  background-color: rgba(255 0 0 / 0.2);
+}

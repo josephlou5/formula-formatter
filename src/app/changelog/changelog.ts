@@ -74,6 +74,14 @@ export const CHANGELOG: Version[] = [
       },
     ],
   },
+  {
+    version: [0, 7],
+    timestamp: "2025-03-28 21:59",
+    description: [
+      { text: "Added indent level rulers" },
+      { text: "Added trailing space highlights" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

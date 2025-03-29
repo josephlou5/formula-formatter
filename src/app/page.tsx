@@ -191,7 +191,7 @@ export default function Page() {
           className={`editor-content-overlay line-${index + 1}`}
           style={{ gridRow: index + 1 }}
         >
-          {line || ZERO_WIDTH_SPACE}
+          <HighlightedLine lineNum={index} line={line} />
         </div>
       ))}
       <textarea
@@ -210,6 +210,44 @@ export default function Page() {
         }}
       ></textarea>
     </div>
+  );
+}
+
+/** Displays a highlighted line. */
+function HighlightedLine({ lineNum, line }: { lineNum: number; line: string }) {
+  if (!line) return <span className="indent-level">{ZERO_WIDTH_SPACE}</span>;
+
+  let numTrailingSpaces = 0;
+  for (let i = line.length - 1; i >= 0; i--) {
+    if (line[i] !== " ") break;
+    numTrailingSpaces++;
+  }
+  let numLeadingSpaces = 0;
+  for (let i = numTrailingSpaces; i < line.length; i++) {
+    if (line[i] !== " ") break;
+    numLeadingSpaces++;
+  }
+
+  const leadingTabs = [];
+  for (let i = 0; i < numLeadingSpaces; i += TAB_SPACES) {
+    const endIndex = Math.min(i + TAB_SPACES, numLeadingSpaces);
+    leadingTabs.push(
+      <span key={`line-${lineNum}-indent-${i}`} className="indent-level">
+        {line.slice(i, endIndex)}
+      </span>
+    );
+  }
+
+  return (
+    <>
+      {leadingTabs}
+      {line.slice(numLeadingSpaces, line.length - numTrailingSpaces)}
+      {numTrailingSpaces > 0 && (
+        <span className="trailing-spaces">
+          {line.slice(line.length - numTrailingSpaces)}
+        </span>
+      )}
+    </>
   );
 }
 
