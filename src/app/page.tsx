@@ -19,6 +19,7 @@ interface Position {
 }
 
 const TAB_SPACES = 2;
+const ZERO_WIDTH_SPACE = "\u200B";
 
 export default function Page() {
   const [text, setText] = useState("=");
@@ -45,10 +46,11 @@ export default function Page() {
 
   function handleTextareaSizing() {
     if (!textareaRef.current) return;
+    // Make the height small so that `scrollHeight` is calculated to be the
+    // minimum content height.
     textareaRef.current.style.height = "1px";
-    textareaRef.current.style.height = `max(${textareaRef.current.scrollHeight}px, 100%)`;
-    textareaRef.current.style.width = "1px";
-    textareaRef.current.style.width = `max(${textareaRef.current.scrollWidth}px, 100%)`;
+    // Account for the top padding of the textarea.
+    textareaRef.current.style.height = `max(calc(0.25rem + ${textareaRef.current.scrollHeight}px), 100%)`;
   }
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
@@ -130,7 +132,8 @@ export default function Page() {
           const lengthDelta = newLines[lineNum].length - prevLength;
           if (lineNum === startPos.lineNum) {
             startPos.colNum += lengthDelta;
-          } else if (lineNum === endPos.lineNum) {
+          }
+          if (lineNum === endPos.lineNum) {
             endPos.colNum += lengthDelta;
           }
         }
@@ -160,27 +163,51 @@ export default function Page() {
   }
 
   return (
-    <div className="flex-grow-1 d-flex">
-      <div
-        className="d-flex flex-column text-end text-secondary me-2"
-        style={{ paddingTop: "5px" }}
-      >
-        {lines.map((line, index) => (
-          <div key={index} className="editor-font">
-            {index + 1}
-          </div>
-        ))}
-      </div>
+    <div
+      id="editor-container"
+      className="flex-grow-1 d-grid column-gap-2 mb-1"
+      style={{
+        // Couldn't figure out how to make this work without "hacking" the CSS
+        // like this.
+        gridTemplateRows: `repeat(${lines.length}, min-content) 1fr`,
+      }}
+    >
+      {
+        // There is technically no reason to split up the line numbers and the
+        // line contents, but it looks nicer in the HTML.
+      }
+      {lines.map((line, index) => (
+        <div
+          key={`line-num-${index}`}
+          className={`editor-line-num line-${index + 1}`}
+          style={{ gridRow: index + 1 }}
+        >
+          {index + 1}
+        </div>
+      ))}
+      {lines.map((line, index) => (
+        <div
+          key={`line-${index}`}
+          className={`editor-content-overlay line-${index + 1}`}
+          style={{ gridRow: index + 1 }}
+        >
+          {line || ZERO_WIDTH_SPACE}
+        </div>
+      ))}
       <textarea
         ref={textareaRef}
         id="editor"
-        className="form-control editor-font overflow-y-hidden p-1"
-        style={{ width: "100%", height: "100%" }}
+        className="form-control overflow-hidden"
         value={text}
         autoComplete="off"
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onSelect={handleSelect}
+        style={{
+          // Not sure why `gridRowEnd: -1` doesn't work. Also feels so "hacky"
+          // to do this.
+          gridRowEnd: lines.length + 2,
+        }}
       ></textarea>
     </div>
   );

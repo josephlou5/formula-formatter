@@ -1,10 +1,47 @@
-.editor-font {
-  font-family: "Google Sans Mono", "Roboto Mono", Menlo, monospace;
-  font-size: 16px;
-  line-height: 1.3em;
+#editor-container {
+  grid-template-columns: auto 1fr;
+
+  & * {
+    font-family: "Google Sans Mono", "Roboto Mono", Menlo, monospace;
+    font-size: 16px;
+    line-height: 1.3em;
+  }
+}
+
+.editor-line-num {
+  grid-column: 1;
+
+  /* .text-secondary */
+  color: var(--bs-secondary);
+  /* .text-end */
+  text-align: end;
+}
+
+.editor-content-overlay {
+  grid-column: 2;
+  /* .ps-1 + 1px border */
+  padding-left: calc(0.25rem + 1px);
+  white-space: pre-wrap;
+  white-space-collapse: preserve;
+  z-index: 0;
+}
+
+.line-1 {
+  /* .pt-1 + 1px border */
+  padding-top: calc(0.25rem + 1px);
 }
 
 #editor {
+  /* Entire second column. (grid-row-end set on element.) */
+  grid-column: 2;
+  grid-row-start: 1;
+
+  background: transparent;
+  caret-color: black;
+  color: transparent;
   resize: none;
-  overflow-x: scroll;
+  /* .p-1 */
+  padding: 0.25rem;
+  /* Above the content so the caret is visible. */
+  z-index: 1;
 }

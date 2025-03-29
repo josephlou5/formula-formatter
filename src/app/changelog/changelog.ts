@@ -47,6 +47,33 @@ export const CHANGELOG: Version[] = [
     timestamp: "2025-03-28 02:58",
     description: [{ text: "Added automatic height expansion to the editor" }],
   },
+  {
+    version: [0, 6],
+    timestamp: "2025-03-28 21:57",
+    description: [
+      {
+        text: "Added content overlay",
+        children: [
+          {
+            text:
+              "A lot of inspiration from " +
+              "https://css-tricks.com/creating-an-editable-textarea-that-supports-syntax-highlighted-code/",
+          },
+          {
+            text:
+              "Switched to CSS grid, which made the overlay pretty much " +
+              "trivial. Except I couldn't figure out some things without " +
+              '"hacking" values into the element styles.',
+          },
+          {
+            text:
+              "Long lines will wrap, and line numbers are spaced " +
+              "appropriately (thanks CSS grid!).",
+          },
+        ],
+      },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
