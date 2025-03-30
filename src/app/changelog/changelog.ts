@@ -82,6 +82,15 @@ export const CHANGELOG: Version[] = [
       { text: "Added trailing space highlights" },
     ],
   },
+  {
+    version: [0, 8],
+    timestamp: "2025-03-30 00:27",
+    description: [
+      { text: "Added token parsing" },
+      { text: "Added token styles" },
+      { text: "Added parse errors panel" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

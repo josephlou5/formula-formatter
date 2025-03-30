@@ -9,17 +9,17 @@ import {
   useState,
 } from "react";
 
+import { parseTokens, TextRange } from "../parser/tokens";
+import {
+  convertIndexToPosition,
+  convertPositionToIndex,
+  Position,
+  sortByPositions,
+} from "../utils/position";
+
 import "./style.css";
 
-interface Position {
-  /** Line number (0-indexed). */
-  lineNum: number;
-  /** Column number right after the cursor (0-indexed). */
-  colNum: number;
-}
-
 const TAB_SPACES = 2;
-const ZERO_WIDTH_SPACE = "\u200B";
 
 export default function Page() {
   const [text, setText] = useState("=");
@@ -162,6 +162,35 @@ export default function Page() {
     );
   }
 
+  const parsedTokens = parseTokens(lines);
+  // Combine the errors with the tokens so they can iterated over easily.
+  const parsedTokensByLine = new Map<number, TokenSpan[]>();
+  for (const token of parsedTokens.tokens) {
+    const lineNum = token.startPosition.lineNum;
+    if (!parsedTokensByLine.has(lineNum)) {
+      parsedTokensByLine.set(lineNum, []);
+    }
+    parsedTokensByLine.get(lineNum)!.push({
+      ...token,
+      keyLabel: "token",
+      className: `token-${token.type}`,
+    });
+  }
+  for (const error of parsedTokens.errors) {
+    const lineNum = error.startPosition.lineNum;
+    if (!parsedTokensByLine.has(lineNum)) {
+      parsedTokensByLine.set(lineNum, []);
+    }
+    parsedTokensByLine.get(lineNum)!.push({
+      ...error,
+      keyLabel: "error",
+      className: "token-parse-error",
+    });
+  }
+  for (const array of parsedTokensByLine.values()) {
+    array.sort(sortByPositions((x) => x.startPosition));
+  }
+
   return (
     <div
       id="editor-container"
@@ -191,7 +220,11 @@ export default function Page() {
           className={`editor-content-overlay line-${index + 1}`}
           style={{ gridRow: index + 1 }}
         >
-          <HighlightedLine lineNum={index} line={line} />
+          <StylizedLine
+            lineNum={index}
+            line={line}
+            tokenSpans={parsedTokensByLine.get(index) ?? []}
+          />
         </div>
       ))}
       <textarea
@@ -200,22 +233,59 @@ export default function Page() {
         className="form-control overflow-hidden"
         value={text}
         autoComplete="off"
+        spellCheck="false"
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onSelect={handleSelect}
-        style={{
-          // Not sure why `gridRowEnd: -1` doesn't work. Also feels so "hacky"
-          // to do this.
-          gridRowEnd: lines.length + 2,
-        }}
       ></textarea>
+      {parsedTokens.errors.length > 0 && (
+        <div id="errors-status-container">
+          <div className="fw-bold">Errors</div>
+          <ul>
+            {parsedTokens.errors.map((error) => {
+              const loc = error.startPosition;
+              return (
+                <li
+                  key={`error-status-${loc.lineNum}-${loc.colNum}`}
+                  className="status-error"
+                >
+                  Ln{loc.lineNum + 1}, Col{loc.colNum + 1}: {error.error}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
 
-/** Displays a highlighted line. */
-function HighlightedLine({ lineNum, line }: { lineNum: number; line: string }) {
-  if (!line) return <span className="indent-level">{ZERO_WIDTH_SPACE}</span>;
+interface TokenSpan extends TextRange {
+  keyLabel: string;
+  className?: string;
+}
+
+/** Displays a stylized line. */
+function StylizedLine({
+  lineNum,
+  line,
+  tokenSpans,
+}: {
+  lineNum: number;
+  line: string;
+  tokenSpans: TokenSpan[];
+}) {
+  if (!line) {
+    return <span className="indent-level"></span>;
+  }
+
+  function makeKey(key: string, index?: any) {
+    let fullKey = `line-${lineNum}-${key}`;
+    if (index != null) {
+      fullKey = `${fullKey}-${index}`;
+    }
+    return fullKey;
+  }
 
   let numTrailingSpaces = 0;
   for (let i = line.length - 1; i >= 0; i--) {
@@ -228,73 +298,52 @@ function HighlightedLine({ lineNum, line }: { lineNum: number; line: string }) {
     numLeadingSpaces++;
   }
 
-  const leadingTabs = [];
-  for (let i = 0; i < numLeadingSpaces; i += TAB_SPACES) {
-    const endIndex = Math.min(i + TAB_SPACES, numLeadingSpaces);
-    leadingTabs.push(
-      <span key={`line-${lineNum}-indent-${i}`} className="indent-level">
-        {line.slice(i, endIndex)}
+  const lineElements = [];
+  let index = 0;
+
+  // Leading tabs.
+  while (index < numLeadingSpaces) {
+    const endIndex = Math.min(index + TAB_SPACES, numLeadingSpaces);
+    lineElements.push(
+      <span key={makeKey("indent", index)} className="indent-level">
+        {line.slice(index, endIndex)}
+      </span>
+    );
+    index = endIndex;
+  }
+
+  // Stylized tokens. (Assume there are no tokens in whitespace).
+  for (const {
+    startPosition,
+    endPosition,
+    keyLabel,
+    className,
+    content,
+  } of tokenSpans) {
+    const startCol = startPosition.colNum;
+    const endCol = endPosition.colNum;
+    if (index < startCol) {
+      lineElements.push(line.slice(index, startCol));
+    }
+    lineElements.push(
+      <span key={makeKey(keyLabel, startCol)} className={className}>
+        {content}
+      </span>
+    );
+    index = endCol + 1;
+  }
+  if (index < line.length - numTrailingSpaces) {
+    lineElements.push(line.slice(index, line.length - numTrailingSpaces));
+  }
+
+  // Trailing spaces.
+  if (numTrailingSpaces > 0) {
+    lineElements.push(
+      <span key={makeKey("trailing-spaces")} className="trailing-spaces">
+        {line.slice(line.length - numTrailingSpaces)}
       </span>
     );
   }
 
-  return (
-    <>
-      {leadingTabs}
-      {line.slice(numLeadingSpaces, line.length - numTrailingSpaces)}
-      {numTrailingSpaces > 0 && (
-        <span className="trailing-spaces">
-          {line.slice(line.length - numTrailingSpaces)}
-        </span>
-      )}
-    </>
-  );
-}
-
-/**
- * Converts the given index to its position.
- *
- * If `index` is out of bounds, returns the last position.
- */
-function convertIndexToPosition(lines: string[], index: number): Position {
-  if (index < 0) {
-    return { lineNum: 0, colNum: 0 };
-  }
-  let currIndex = 0;
-  for (let i = 0; i < lines.length; i++) {
-    const endIndex = currIndex + lines[i].length;
-    if (currIndex <= index && index <= endIndex) {
-      return { lineNum: i, colNum: index - currIndex };
-    }
-    // Add one for the newline character.
-    currIndex = endIndex + 1;
-  }
-  return { lineNum: lines.length - 1, colNum: lines[lines.length - 1].length };
-}
-
-/**
- * Converts the given position to its index.
- *
- * If `position.lineNum` is out of bounds, returns the last index.
- * If `position.colNum` is out of bounds, returns the last index in that line.
- */
-function convertPositionToIndex(lines: string[], position: Position): number {
-  const lineLengths = lines.map((line) => line.length);
-  if (position.lineNum < 0) {
-    return 0;
-  }
-  if (position.lineNum >= lines.length) {
-    return lineLengths.reduce(
-      (total, length) => total + length,
-      lines.length - 1
-    );
-  }
-  const lineOffset = lineLengths
-    .slice(0, position.lineNum)
-    .reduce((total, length) => total + length + 1, 0);
-  const colOffset = Math.min(
-    Math.max(0, position.colNum),
-    lines[position.lineNum].length
-  );
-  return lineOffset + colOffset;
+  return lineElements;
 }
