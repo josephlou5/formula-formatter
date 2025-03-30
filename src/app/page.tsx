@@ -113,7 +113,7 @@ export default function Page() {
             numSpaces++;
           }
           let numTabs = Math.floor(numSpaces / TAB_SPACES);
-          if (shift) {
+          if (key === "S-Tab") {
             // Dedent.
             if (numSpaces % TAB_SPACES === 0) {
               // Exact number of tabs, so decrease indentation level.
