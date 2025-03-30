@@ -108,6 +108,23 @@ export const CHANGELOG: Version[] = [
     timestamp: "2025-03-30 01:37",
     description: [{ text: "Fixed ESLint warning" }],
   },
+  {
+    version: [0, 11],
+    timestamp: "2025-03-30 11:32",
+    description: [
+      {
+        text: "Fixed injected equals sign",
+        children: [
+          {
+            text:
+              "The insertion into the actual text was causing issues due to " +
+              "the input loop. Now the equals sign is injected into the " +
+              "content overlay directly.",
+          },
+        ],
+      },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

@@ -116,7 +116,6 @@ export function parseTokens(lines: string[]): ParseTokensResult {
     }
   }
 
-  let start = true;
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
     const line = lines[lineNum];
     const buffer = [];
@@ -130,13 +129,6 @@ export function parseTokens(lines: string[]): ParseTokensResult {
     };
     for (let colNum = 0; colNum < line.length; colNum++) {
       const c = line[colNum];
-      if (start && c === " ") continue;
-      if (start && c === "=") {
-        // Ignore the starting equal sign.
-        start = false;
-        continue;
-      }
-      start = false;
 
       if (state.inString) {
         if (c === '"') {

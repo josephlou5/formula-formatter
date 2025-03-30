@@ -31,10 +31,6 @@ export default function Page() {
   const escRef = useRef(false);
 
   const lines = text.split("\n");
-  // Inject the equals sign in front of the first line. The content overlay will
-  // display this, and all positions are based on these lines, so it doesn't
-  // matter that it's not in the textarea input.
-  lines[0] = "=" + lines[0];
 
   useEffect(() => {
     if (!textareaRef.current) return;
@@ -241,12 +237,18 @@ export default function Page() {
           <ul>
             {parsedTokens.errors.map((error) => {
               const loc = error.startPosition;
+              const lineNum = loc.lineNum + 1;
+              let colNum = loc.colNum + 1;
+              if (lineNum === 1) {
+                // Offset to account for the inserted equals sign.
+                colNum++;
+              }
               return (
                 <li
                   key={`error-status-${loc.lineNum}-${loc.colNum}`}
                   className="status-error"
                 >
-                  Ln{loc.lineNum + 1}, Col{loc.colNum + 1}: {error.error}
+                  Ln{lineNum}, Col{colNum}: {error.error}
                 </li>
               );
             })}
@@ -272,16 +274,28 @@ function StylizedLine({
   line: string;
   tokenSpans: TokenSpan[];
 }) {
-  if (!line) {
-    return <span className="indent-level"></span>;
-  }
-
   function makeKey(key: string, index?: number) {
     let fullKey = `line-${lineNum}-${key}`;
     if (index != null) {
       fullKey = `${fullKey}-${index}`;
     }
     return fullKey;
+  }
+
+  const lineElements = [];
+  let index = 0;
+  if (lineNum === 0) {
+    // Special case: add the leading equals sign.
+    lineElements.push("=");
+  }
+
+  if (!line) {
+    if (lineElements.length === 0) {
+      lineElements.push(
+        <span key={makeKey("empty")} className="indent-level"></span>
+      );
+    }
+    return lineElements;
   }
 
   let numTrailingSpaces = 0;
@@ -294,9 +308,6 @@ function StylizedLine({
     if (line[i] !== " ") break;
     numLeadingSpaces++;
   }
-
-  const lineElements = [];
-  let index = 0;
 
   // Leading tabs.
   while (index < numLeadingSpaces) {
