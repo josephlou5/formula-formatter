@@ -22,7 +22,7 @@ import "./style.css";
 const TAB_SPACES = 2;
 
 export default function Page() {
-  const [text, setText] = useState("=");
+  const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectionRef = useRef<{ start: Position; end: Position }>({
     start: { lineNum: 0, colNum: 1 },
@@ -31,6 +31,10 @@ export default function Page() {
   const escRef = useRef(false);
 
   const lines = text.split("\n");
+  // Inject the equals sign in front of the first line. The content overlay will
+  // display this, and all positions are based on these lines, so it doesn't
+  // matter that it's not in the textarea input.
+  lines[0] = "=" + lines[0];
 
   useEffect(() => {
     if (!textareaRef.current) return;
@@ -54,14 +58,7 @@ export default function Page() {
   }
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    let newText = event.currentTarget.value;
-    if (!newText.startsWith("=")) {
-      // FIXME: When deleting the equals sign, the cursor jumps to the end.
-      // FIXME: When the cursor is before the equals sign and the user types,
-      // an equals sign will be inserted.
-      newText = "=" + newText;
-    }
-    const newLines = newText.split("\n");
+    const newLines = event.currentTarget.value.split("\n");
     // Update the selection.
     handleSelect(event, newLines);
     setLines(newLines);

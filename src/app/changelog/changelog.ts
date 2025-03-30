@@ -91,6 +91,18 @@ export const CHANGELOG: Version[] = [
       { text: "Added parse errors panel" },
     ],
   },
+  {
+    version: [0, 9],
+    timestamp: "2025-03-30 00:47",
+    description: [
+      {
+        text: "Added indent to textarea input",
+        children: [
+          { text: "This makes the equals sign uneditable and constant." },
+        ],
+      },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
