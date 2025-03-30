@@ -276,7 +276,7 @@ function StylizedLine({
     return <span className="indent-level"></span>;
   }
 
-  function makeKey(key: string, index?: any) {
+  function makeKey(key: string, index?: number) {
     let fullKey = `line-${lineNum}-${key}`;
     if (index != null) {
       fullKey = `${fullKey}-${index}`;

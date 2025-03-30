@@ -103,6 +103,11 @@ export const CHANGELOG: Version[] = [
       },
     ],
   },
+  {
+    version: [0, 10],
+    timestamp: "2025-03-30 01:37",
+    description: [{ text: "Fixed ESLint warning" }],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
