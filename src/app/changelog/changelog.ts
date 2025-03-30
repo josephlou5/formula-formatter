@@ -125,6 +125,13 @@ export const CHANGELOG: Version[] = [
       },
     ],
   },
+  {
+    version: [0, 11],
+    timestamp: "2025-03-30 11:35",
+    description: [
+      { text: "Updated keydown handler to properly process modifier keys" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

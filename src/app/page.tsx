@@ -62,20 +62,26 @@ export default function Page() {
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    const key = event.key;
-    const shift = event.shiftKey;
-    if (key === "Escape") {
+    if (event.key === "Escape") {
       escRef.current = true;
       return;
     }
+    if (["Meta", "Control", "Alt", "Shift"].includes(event.key)) return;
+    const key = [
+      event.metaKey ? "M-" : "",
+      event.ctrlKey ? "C-" : "",
+      event.altKey ? "A-" : "",
+      event.shiftKey ? "S-" : "",
+      event.key,
+    ].join("");
     (() => {
-      if (key === "Tab") {
+      if (key === "Tab" || key === "S-Tab") {
         if (escRef.current) {
           // Allow default behavior.
           return;
         }
-        event.preventDefault();
         if (!textareaRef.current) return;
+        event.preventDefault();
 
         // Indent or dedent the lines containing the current selection.
         const startPos = convertIndexToPosition(
