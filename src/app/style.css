@@ -94,6 +94,10 @@
   color: #f7981c;
 }
 
+.token-literal {
+  color: #1155cc;
+}
+
 .token-parse-error {
   background-color: rgba(255 0 0 / 0.2);
   text-decoration: spelling-error;
