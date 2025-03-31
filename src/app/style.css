@@ -1,10 +1,25 @@
 #editor-container {
-  grid-template-columns: auto 1fr fit-content(300px);
+  grid-template-columns: auto 1fr;
 
   & > * {
     font-family: "Google Sans Mono", "Roboto Mono", Menlo, monospace;
     font-size: 16px;
     line-height: 1.3em;
+  }
+}
+
+#errors-container {
+  /* First row, second column. */
+  grid-row: 1;
+  grid-column: 2;
+
+  color: red;
+  font-size: 14px;
+
+  ul {
+    list-style-type: "-";
+    margin-bottom: 0.5em;
+    padding-left: 2ch;
   }
 }
 
@@ -33,9 +48,9 @@
 }
 
 #editor {
-  /* Entire second column. */
+  /* Entire second column (after errors container). */
   grid-column: 2;
-  grid-row: 1 / -1;
+  grid-row: 2 / -1;
 
   background: transparent;
   caret-color: black;
@@ -46,20 +61,6 @@
   text-indent: 1ch;
   /* Above the content so the caret is visible. */
   z-index: 1;
-}
-
-#errors-status-container {
-  /* Entire third column. */
-  grid-column: 3;
-  grid-row: 1 / -1;
-
-  color: red;
-  font-size: 14px;
-
-  ul {
-    list-style-type: "-";
-    padding-left: 2ch;
-  }
 }
 
 /** Styles for text overlay. */
@@ -94,5 +95,6 @@
 }
 
 .token-parse-error {
+  background-color: rgba(255 0 0 / 0.2);
   text-decoration: spelling-error;
 }

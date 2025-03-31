@@ -132,6 +132,39 @@ export const CHANGELOG: Version[] = [
       { text: "Updated keydown handler to properly process modifier keys" },
     ],
   },
+  {
+    version: [0, 12],
+    timestamp: "2025-03-30 21:40",
+    description: [
+      {
+        text: "Moved errors container to above the input",
+        children: [
+          { text: "This makes it easier to use on mobile or smaller screens." },
+        ],
+      },
+      {
+        text:
+          "Added red highlight around the textarea when there is a parsing " +
+          "error",
+      },
+      {
+        text: "Fixed a few issues with line styling",
+        children: [
+          { text: "Empty lines show the first indent ruler again." },
+          {
+            text:
+              "Trailing and leading spaces no longer compete (resulted in " +
+              "rendering them twice).",
+          },
+          {
+            text:
+              "There may be stylized parts in the trailing whitespace (such " +
+              "as errors), so don't render them twice.",
+          },
+        ],
+      },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

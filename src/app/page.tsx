@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { parseTokens, TextRange } from "../parser/tokens";
+import { makeClassName } from "../utils/className";
 import {
   convertIndexToPosition,
   convertPositionToIndex,
@@ -197,7 +198,9 @@ export default function Page() {
       style={{
         // Couldn't figure out how to make this work without "hacking" the CSS
         // like this.
-        gridTemplateRows: `repeat(${lines.length}, min-content) 1fr`,
+        // Number of rows = 1 error row + number of lines + 1 dummy row to fill
+        // remaining space.
+        gridTemplateRows: `repeat(${1 + lines.length}, min-content) 1fr`,
       }}
     >
       {
@@ -208,37 +211,13 @@ export default function Page() {
         <div
           key={`line-num-${index}`}
           className={`editor-line-num line-${index + 1}`}
-          style={{ gridRow: index + 1 }}
+          style={{ gridRow: index + 2 }}
         >
           {index + 1}
         </div>
       ))}
-      {lines.map((line, index) => (
-        <div
-          key={`line-${index}`}
-          className={`editor-content-overlay line-${index + 1}`}
-          style={{ gridRow: index + 1 }}
-        >
-          <StylizedLine
-            lineNum={index}
-            line={line}
-            tokenSpans={parsedTokensByLine.get(index) ?? []}
-          />
-        </div>
-      ))}
-      <textarea
-        ref={textareaRef}
-        id="editor"
-        className="form-control overflow-hidden"
-        value={text}
-        autoComplete="off"
-        spellCheck="false"
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onSelect={handleSelect}
-      ></textarea>
       {parsedTokens.errors.length > 0 && (
-        <div id="errors-status-container">
+        <div id="errors-container">
           <div className="fw-bold">Errors</div>
           <ul>
             {parsedTokens.errors.map((error) => {
@@ -250,10 +229,7 @@ export default function Page() {
                 colNum++;
               }
               return (
-                <li
-                  key={`error-status-${loc.lineNum}-${loc.colNum}`}
-                  className="status-error"
-                >
+                <li key={`error-${loc.lineNum}-${loc.colNum}`}>
                   Ln{lineNum}, Col{colNum}: {error.error}
                 </li>
               );
@@ -261,6 +237,34 @@ export default function Page() {
           </ul>
         </div>
       )}
+      {lines.map((line, index) => (
+        <div
+          key={`line-${index}`}
+          className={`editor-content-overlay line-${index + 1}`}
+          style={{ gridRow: index + 2 }}
+        >
+          <StylizedLine
+            lineNum={index}
+            line={line}
+            tokenSpans={parsedTokensByLine.get(index) ?? []}
+          />
+        </div>
+      ))}
+      <textarea
+        ref={textareaRef}
+        id="editor"
+        className={makeClassName({
+          "form-control": true,
+          "overflow-hidden": true,
+          "is-invalid": parsedTokens.errors.length > 0,
+        })}
+        value={text}
+        autoComplete="off"
+        spellCheck="false"
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onSelect={handleSelect}
+      ></textarea>
     </div>
   );
 }
@@ -298,7 +302,9 @@ function StylizedLine({
   if (!line) {
     if (lineElements.length === 0) {
       lineElements.push(
-        <span key={makeKey("empty")} className="indent-level"></span>
+        <span key={makeKey("empty")} className="indent-level">
+          &nbsp;
+        </span>
       );
     }
     return lineElements;
@@ -310,10 +316,13 @@ function StylizedLine({
     numTrailingSpaces++;
   }
   let numLeadingSpaces = 0;
-  for (let i = numTrailingSpaces; i < line.length; i++) {
+  if (numTrailingSpaces < line.length) {
+    for (let i = 0; i < line.length; i++) {
     if (line[i] !== " ") break;
     numLeadingSpaces++;
   }
+  }
+  const trailingSpacesIndex = line.length - numTrailingSpaces;
 
   // Leading tabs.
   while (index < numLeadingSpaces) {
@@ -326,7 +335,7 @@ function StylizedLine({
     index = endIndex;
   }
 
-  // Stylized tokens. (Assume there are no tokens in whitespace).
+  // Stylized tokens. (Assume there are no tokens in leading whitespace).
   for (const {
     startPosition,
     endPosition,
@@ -346,15 +355,16 @@ function StylizedLine({
     );
     index = endCol + 1;
   }
-  if (index < line.length - numTrailingSpaces) {
-    lineElements.push(line.slice(index, line.length - numTrailingSpaces));
+  if (index < trailingSpacesIndex) {
+    lineElements.push(line.slice(index, trailingSpacesIndex));
   }
 
-  // Trailing spaces.
-  if (numTrailingSpaces > 0) {
+  // Trailing spaces. There might be a conflict with tokens here, if there was
+  // a parse error with the rest of the line.
+  if (numTrailingSpaces > 0 && index < line.length) {
     lineElements.push(
       <span key={makeKey("trailing-spaces")} className="trailing-spaces">
-        {line.slice(line.length - numTrailingSpaces)}
+        {line.slice(Math.max(index, trailingSpacesIndex))}
       </span>
     );
   }
