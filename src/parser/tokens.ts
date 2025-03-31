@@ -18,7 +18,8 @@ export enum TokenType {
   LITERAL = "literal",
 }
 
-const OPERATORS = new Set("+-/*^&=");
+const OPERATORS_SINGLE = new Set("+-/*^&=<>");
+const OPERATORS_DOUBLE = new Set(["<=", ">=", "<>"]);
 const PUNCTUATION = new Map([
   [",", TokenType.COMMA],
   [";", TokenType.SEMICOLON],
@@ -149,7 +150,7 @@ export function parseTokens(lines: string[]): ParseTokensResult {
 
       if (state.inString) {
         if (c === '"') {
-          if (colNum < line.length + 1 && line[colNum + 1] === '"') {
+          if (colNum < line.length - 1 && line[colNum + 1] === '"') {
             // Two double quotes is escaped as a double quote.
             buffer.push('""');
             colNum++;
@@ -169,7 +170,7 @@ export function parseTokens(lines: string[]): ParseTokensResult {
       }
       if (state.inQuotes) {
         if (c === "'") {
-          if (colNum < line.length + 1 && line[colNum + 1] === "'") {
+          if (colNum < line.length - 1 && line[colNum + 1] === "'") {
             // Two single quotes is escaped as a single quote.
             buffer.push("''");
             colNum++;
@@ -187,7 +188,17 @@ export function parseTokens(lines: string[]): ParseTokensResult {
         // Ignore whitespace.
         continue;
       }
-      if (OPERATORS.has(c)) {
+      if (colNum < line.length - 1) {
+        // Check length 2 operators before length 1 operators.
+        const op = line.slice(colNum, colNum + 2);
+        if (OPERATORS_DOUBLE.has(op)) {
+          pushBuffer(buffer, lineNum, colNum);
+          tokens.push(createToken(TokenType.OPERATOR, op, lineNum, colNum + 1));
+          colNum++;
+          continue;
+        }
+      }
+      if (OPERATORS_SINGLE.has(c)) {
         pushBuffer(buffer, lineNum, colNum);
         tokens.push(createToken(TokenType.OPERATOR, c, lineNum, colNum));
         continue;
