@@ -9,13 +9,12 @@ import {
   useState,
 } from "react";
 
-import { parseTokens, TextRange } from "../parser/tokens";
+import { parseTokens, Token } from "../parser/tokens";
 import { makeClassName } from "../utils/className";
 import {
   convertIndexToPosition,
   convertPositionToIndex,
   Position,
-  sortByPositions,
 } from "../utils/position";
 
 import "./style.css";
@@ -164,32 +163,14 @@ export default function Page() {
   }
 
   const parseTokensResult = parseTokens(lines);
-  // Combine the errors with the tokens so they can iterated over easily.
-  const parsedTokensByLine = new Map<number, TokenSpan[]>();
+  // Group the tokens by line.
+  const tokensByLine = new Map<number, Token[]>();
   for (const token of parseTokensResult.tokens) {
     const lineNum = token.startPosition.lineNum;
-    if (!parsedTokensByLine.has(lineNum)) {
-      parsedTokensByLine.set(lineNum, []);
+    if (!tokensByLine.has(lineNum)) {
+      tokensByLine.set(lineNum, []);
     }
-    parsedTokensByLine.get(lineNum)!.push({
-      ...token,
-      keyLabel: "token",
-      className: `token-${token.type}`,
-    });
-  }
-  for (const error of parseTokensResult.errors) {
-    const lineNum = error.startPosition.lineNum;
-    if (!parsedTokensByLine.has(lineNum)) {
-      parsedTokensByLine.set(lineNum, []);
-    }
-    parsedTokensByLine.get(lineNum)!.push({
-      ...error,
-      keyLabel: "error",
-      className: "token-parse-error",
-    });
-  }
-  for (const array of parsedTokensByLine.values()) {
-    array.sort(sortByPositions((x) => x.startPosition));
+    tokensByLine.get(lineNum)!.push(token);
   }
 
   return (
@@ -217,7 +198,7 @@ export default function Page() {
           {index + 1}
         </div>
       ))}
-      {parseTokensResult.errors.length > 0 && (
+      {parseTokensResult.hasError && (
         <div id="errors-container">
           <div className="fw-bold">Errors</div>
           <ul>
@@ -247,7 +228,7 @@ export default function Page() {
           <StylizedLine
             lineNum={index}
             line={line}
-            tokenSpans={parsedTokensByLine.get(index) ?? []}
+            lineTokens={tokensByLine.get(index) ?? []}
           />
         </div>
       ))}
@@ -257,7 +238,7 @@ export default function Page() {
         className={makeClassName({
           "form-control": true,
           "overflow-hidden": true,
-          "is-invalid": parseTokensResult.errors.length > 0,
+          "is-invalid": parseTokensResult.hasError,
         })}
         value={text}
         autoComplete="off"
@@ -270,20 +251,15 @@ export default function Page() {
   );
 }
 
-interface TokenSpan extends TextRange {
-  keyLabel: string;
-  className?: string;
-}
-
 /** Displays a stylized line. */
 function StylizedLine({
   lineNum,
   line,
-  tokenSpans,
+  lineTokens,
 }: {
   lineNum: number;
   line: string;
-  tokenSpans: TokenSpan[];
+  lineTokens: Token[];
 }) {
   function makeKey(key: string, index?: number) {
     let fullKey = `line-${lineNum}-${key}`;
@@ -337,21 +313,15 @@ function StylizedLine({
   }
 
   // Stylized tokens. (Assume there are no tokens in leading whitespace).
-  for (const {
-    startPosition,
-    endPosition,
-    keyLabel,
-    className,
-    content,
-  } of tokenSpans) {
-    const startCol = startPosition.colNum;
-    const endCol = endPosition.colNum;
+  for (const token of lineTokens) {
+    const startCol = token.startPosition.colNum;
+    const endCol = token.endPosition.colNum;
     if (index < startCol) {
       lineElements.push(line.slice(index, startCol));
     }
     lineElements.push(
-      <span key={makeKey(keyLabel, startCol)} className={className}>
-        {content}
+      <span key={makeKey("token", startCol)} className={`token-${token.type}`}>
+        {token.content}
       </span>
     );
     index = endCol + 1;

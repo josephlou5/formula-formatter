@@ -182,6 +182,13 @@ export const CHANGELOG: Version[] = [
     timestamp: "2025-03-31 14:40",
     description: [{ text: "Added support for missing operators" }],
   },
+  {
+    version: [0, 15],
+    timestamp: "2025-03-31 17:08",
+    description: [
+      { text: "Updated token parser to output errors as regular tokens" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

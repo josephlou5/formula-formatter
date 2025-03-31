@@ -16,6 +16,8 @@ export enum TokenType {
   STRING = "string",
   RANGE = "range",
   LITERAL = "literal",
+
+  ERROR = "parse_error",
 }
 
 const OPERATORS_SINGLE = new Set("+-/*^&=<>");
@@ -73,40 +75,36 @@ const RANGE_REF_RE = (() => {
   };
 })();
 
-/** A range of text. */
-export interface TextRange {
+/** A token. */
+export interface Token {
+  /** The type of the token. */
+  type: TokenType;
   /** The content of the token. */
   content: string;
   /** The start position of the token (inclusive). */
   startPosition: Position;
   /** The end position of the token (inclusive). */
   endPosition: Position;
-}
-
-/** A token. */
-export interface Token extends TextRange {
-  /** The type of the token. */
-  type: TokenType;
-}
-
-/** An error during token parsing. */
-export interface ParseTokensError extends TextRange {
-  /** A description of the error. */
-  error: string;
+  /** A description of the error, if `type` is `TokenType.ERROR`. */
+  error?: string;
 }
 
 /** The parsed tokens. */
 export interface ParseTokensResult {
-  /** The parsed tokens. May be incomplete due to errors. */
+  /** The parsed tokens. */
   tokens: Token[];
-  /** Errors during parsing. These will not overlap with `tokens`. */
-  errors: ParseTokensError[];
+  /** Whether there were errors during parsing. */
+  hasError: boolean;
+  /**
+   * The subset of `tokens` that are errors (`token.type` is `TokenType.ERROR`).
+   * Only populated if `hasError` is true.
+   */
+  errors: Token[];
 }
 
 /** Parses the given text into tokens. */
 export function parseTokens(lines: string[]): ParseTokensResult {
   const tokens = [];
-  const errors = [];
 
   function pushBuffer(buffer: string[], lineNum: number, colNum: number) {
     const content = buffer.join("");
@@ -126,7 +124,7 @@ export function parseTokens(lines: string[]): ParseTokensResult {
     }
     if (tokenType === null) {
       // Unknown token.
-      errors.push(
+      tokens.push(
         createError("Parse error: unknown token", content, lineNum, colNum - 1)
       );
     } else {
@@ -222,7 +220,7 @@ export function parseTokens(lines: string[]): ParseTokensResult {
       buffer.push(c);
     }
     if (state.inString || state.inQuotes) {
-      errors.push(
+      tokens.push(
         createError(
           "Unclosed " + (state.inString ? "string" : "quotes"),
           buffer.join(""),
@@ -236,12 +234,9 @@ export function parseTokens(lines: string[]): ParseTokensResult {
   }
 
   // Sort the values just in case.
-  const sortByStartPosition = sortByPositions<TextRange>(
-    (textRange) => textRange.startPosition
-  );
-  tokens.sort(sortByStartPosition);
-  errors.sort(sortByStartPosition);
-  return { tokens, errors };
+  tokens.sort(sortByPositions((token) => token.startPosition));
+  const errors = tokens.filter((token) => token.type === TokenType.ERROR);
+  return { tokens, hasError: errors.length > 0, errors };
 }
 
 function createToken(
@@ -263,13 +258,10 @@ function createError(
   content: string,
   lineNum: number,
   endCol: number
-): ParseTokensError {
-  return {
-    content,
-    startPosition: { lineNum, colNum: endCol - content.length + 1 },
-    endPosition: { lineNum, colNum: endCol },
-    error: message,
-  };
+): Token {
+  const errorToken = createToken(TokenType.ERROR, content, lineNum, endCol);
+  errorToken.error = message;
+  return errorToken;
 }
 
 function clearArray<T>(array: T[]) {
