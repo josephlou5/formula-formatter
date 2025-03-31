@@ -35,15 +35,15 @@ const RANGE_REF_RE = (() => {
     return "(" + patterns.join("|") + ")";
   }
 
-  const sheetNamePattern = /(([a-z0-9_]+|'.+')!)?/.source;
+  const sheetNamePattern = /([a-z0-9_]+|'.+')!/.source;
   const cellColPattern = /\$?[a-z]+/.source;
   const cellRowPattern = /\$?0*[1-9]\d*/.source;
   const cellRefPattern = cellColPattern + cellRowPattern;
   const openColPattern = cellColPattern + `(${cellRowPattern})?`;
   const openRowPattern = `(${cellColPattern})?` + cellRowPattern;
-  return new RegExp(
+  const rangeRefRe = new RegExp(
     "^" +
-      sheetNamePattern +
+      `(${sheetNamePattern})?` +
       joinPatterns(
         // Single cell.
         cellRefPattern,
@@ -53,6 +53,23 @@ const RANGE_REF_RE = (() => {
       "$",
     "i"
   );
+  // Possible named range. https://support.google.com/docs/answer/63175?hl=en
+  const namedRangeRe = new RegExp(
+    "^" + sheetNamePattern + /[a-z_][a-z0-9_]{0,249}/.source + "$",
+    "i"
+  );
+
+  return {
+    test(text: string) {
+      if (rangeRefRe.test(text)) return true;
+      if (namedRangeRe.test(text)) {
+        // Named ranges cannot be named 'true' or 'false'.
+        if (text.endsWith("!true") || text.endsWith("!false")) return false;
+        return true;
+      }
+      return false;
+    },
+  };
 })();
 
 /** A range of text. */

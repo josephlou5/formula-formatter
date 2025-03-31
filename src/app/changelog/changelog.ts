@@ -165,6 +165,18 @@ export const CHANGELOG: Version[] = [
       },
     ],
   },
+  {
+    version: [0, 13],
+    timestamp: "2025-03-31 09:25",
+    description: [
+      {
+        text: "Added support for named ranges in 'range' token",
+        children: [
+          { text: "Thanks to my sister for pointing out this was a thing." },
+        ],
+      },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
