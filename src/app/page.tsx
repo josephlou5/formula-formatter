@@ -67,7 +67,15 @@ export default function Page() {
       escRef.current = true;
       return;
     }
-    if (["Meta", "Control", "Alt", "Shift"].includes(event.key)) return;
+    if (["Meta", "Control", "Alt", "Shift"].includes(event.key)) {
+      // Don't do anything if only modifier keys are pressed.
+      return;
+    }
+    if (escRef.current) {
+      // Allow default behavior.
+      escRef.current = false;
+      return;
+    }
     const key = [
       event.metaKey ? "M-" : "",
       event.ctrlKey ? "C-" : "",
@@ -75,12 +83,7 @@ export default function Page() {
       event.shiftKey ? "S-" : "",
       event.key,
     ].join("");
-    (() => {
-      if (key === "Tab" || key === "S-Tab") {
-        if (escRef.current) {
-          // Allow default behavior.
-          return;
-        }
+    if (["Tab", "S-Tab"].includes(key)) {
         if (!textareaRef.current) return;
         event.preventDefault();
 
@@ -143,8 +146,6 @@ export default function Page() {
 
         setLines(newLines);
       }
-    })();
-    escRef.current = false;
   }
 
   function handleSelect(
@@ -162,10 +163,10 @@ export default function Page() {
     );
   }
 
-  const parsedTokens = parseTokens(lines);
+  const parseTokensResult = parseTokens(lines);
   // Combine the errors with the tokens so they can iterated over easily.
   const parsedTokensByLine = new Map<number, TokenSpan[]>();
-  for (const token of parsedTokens.tokens) {
+  for (const token of parseTokensResult.tokens) {
     const lineNum = token.startPosition.lineNum;
     if (!parsedTokensByLine.has(lineNum)) {
       parsedTokensByLine.set(lineNum, []);
@@ -176,7 +177,7 @@ export default function Page() {
       className: `token-${token.type}`,
     });
   }
-  for (const error of parsedTokens.errors) {
+  for (const error of parseTokensResult.errors) {
     const lineNum = error.startPosition.lineNum;
     if (!parsedTokensByLine.has(lineNum)) {
       parsedTokensByLine.set(lineNum, []);
@@ -216,11 +217,11 @@ export default function Page() {
           {index + 1}
         </div>
       ))}
-      {parsedTokens.errors.length > 0 && (
+      {parseTokensResult.errors.length > 0 && (
         <div id="errors-container">
           <div className="fw-bold">Errors</div>
           <ul>
-            {parsedTokens.errors.map((error) => {
+            {parseTokensResult.errors.map((error) => {
               const loc = error.startPosition;
               const lineNum = loc.lineNum + 1;
               let colNum = loc.colNum + 1;
@@ -256,7 +257,7 @@ export default function Page() {
         className={makeClassName({
           "form-control": true,
           "overflow-hidden": true,
-          "is-invalid": parsedTokens.errors.length > 0,
+          "is-invalid": parseTokensResult.errors.length > 0,
         })}
         value={text}
         autoComplete="off"
