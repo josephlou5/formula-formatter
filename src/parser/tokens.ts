@@ -2,8 +2,22 @@ import { Position, sortByPositions } from "../utils/position";
 
 /** The token types. */
 export enum TokenType {
-  OPERATOR = "operator",
+  // Unary operators.
+  PLUS = "plus",
+  MINUS = "minus",
+  // Binary operators.
+  MULTIPLY = "multiply",
+  DIVIDE = "divide",
+  XOR = "xor",
+  CONCAT = "concat",
+  EQUAL = "equal",
+  NOT_EQUAL = "not_equal",
+  LESS = "less",
+  GREATER = "greater",
+  LESS_OR_EQUAL = "less_or_equal",
+  GREATER_OR_EQUAL = "greater_or_equal",
 
+  // Punctuation.
   COMMA = "comma",
   SEMICOLON = "semicolon",
   L_PAREN = "left_paren",
@@ -11,17 +25,50 @@ export enum TokenType {
   L_BRACKET = "left_bracket",
   R_BRACKET = "right_bracket",
 
+  // Literals.
+  LITERAL = "literal",
   IDENTIFIER = "identifier",
   NUMBER = "number",
   STRING = "string",
   RANGE = "range",
-  LITERAL = "literal",
 
   ERROR = "parse_error",
 }
 
-const OPERATORS_SINGLE = new Set("+-/*^&=<>");
-const OPERATORS_DOUBLE = new Set(["<=", ">=", "<>"]);
+/** The unary operator tokens. */
+export const UNARY_OPERATORS = [TokenType.PLUS, TokenType.MINUS];
+
+/** The binary operator tokens. */
+export const OPERATORS = [
+  ...UNARY_OPERATORS,
+  TokenType.MULTIPLY,
+  TokenType.DIVIDE,
+  TokenType.XOR,
+  TokenType.CONCAT,
+  TokenType.EQUAL,
+  TokenType.NOT_EQUAL,
+  TokenType.LESS,
+  TokenType.GREATER,
+  TokenType.LESS_OR_EQUAL,
+  TokenType.GREATER_OR_EQUAL,
+];
+
+const OPERATORS_SINGLE = new Map([
+  ["+", TokenType.PLUS],
+  ["-", TokenType.MINUS],
+  ["*", TokenType.MULTIPLY],
+  ["/", TokenType.DIVIDE],
+  ["^", TokenType.XOR],
+  ["&", TokenType.CONCAT],
+  ["=", TokenType.EQUAL],
+  ["<", TokenType.LESS],
+  [">", TokenType.GREATER],
+]);
+const OPERATORS_DOUBLE = new Map([
+  ["<>", TokenType.NOT_EQUAL],
+  ["<=", TokenType.LESS_OR_EQUAL],
+  [">=", TokenType.GREATER_OR_EQUAL],
+]);
 const PUNCTUATION = new Map([
   [",", TokenType.COMMA],
   [";", TokenType.SEMICOLON],
@@ -30,7 +77,7 @@ const PUNCTUATION = new Map([
   ["{", TokenType.L_BRACKET],
   ["}", TokenType.R_BRACKET],
 ]);
-const LITERALS = new Set(["true", "false"]);
+const LITERALS = new Set(["true", "false", "#n/a"]);
 const NUMBER_LITERAL_RE = /^-?(\d+(\.\d*)?|\.\d+)(e\d+)?$/i;
 const IDENTIFIER_LITERAL_RE = /^[a-z_][a-z0-9_]*$/i;
 const RANGE_REF_RE = (() => {
@@ -89,29 +136,35 @@ export interface Token {
   error?: string;
 }
 
-/** The parsed tokens. */
-export interface ParseTokensResult {
-  /** The parsed tokens. */
-  tokens: Token[];
-  /** Whether there were errors during parsing. */
-  hasError: boolean;
-  /**
-   * The subset of `tokens` that are errors (`token.type` is `TokenType.ERROR`).
-   * Only populated if `hasError` is true.
-   */
-  errors: Token[];
-}
+const SPACE = " ";
+const SINGLE_QUOTE = "'";
+const DOUBLE_QUOTE = '"';
 
 /** Parses the given text into tokens. */
-export function parseTokens(lines: string[]): ParseTokensResult {
-  const tokens = [];
+export function parseTokens(lines: string[]): Token[] {
+  const tokens: Token[] = [];
 
   function pushBuffer(buffer: string[], lineNum: number, colNum: number) {
-    const content = buffer.join("");
+    let content = buffer.join("");
     clearArray(buffer);
     if (content.length === 0) return;
 
-    let tokenType = null;
+    // Special case: #n/a.
+    if (tokens.length >= 2 && content.toLowerCase() === "a") {
+      const prev1 = tokens[tokens.length - 2];
+      const prev2 = tokens[tokens.length - 1];
+      if (
+        prev1.startPosition.lineNum === lineNum &&
+        prev1.startPosition.colNum === colNum - 4 &&
+        prev1.content.toLowerCase() === "#n" &&
+        prev2.content === "/"
+      ) {
+        tokens.splice(-2, 2);
+        content = prev1.content + prev2.content + content;
+      }
+    }
+
+    let tokenType;
     if (LITERALS.has(content.toLowerCase())) {
       tokenType = TokenType.LITERAL;
     } else if (NUMBER_LITERAL_RE.test(content)) {
@@ -121,15 +174,14 @@ export function parseTokens(lines: string[]): ParseTokensResult {
     } else if (IDENTIFIER_LITERAL_RE.test(content)) {
       // Must be checked last so that literals and ranges are matched first.
       tokenType = TokenType.IDENTIFIER;
-    }
-    if (tokenType === null) {
+    } else {
       // Unknown token.
       tokens.push(
         createError("Parse error: unknown token", content, lineNum, colNum - 1)
       );
-    } else {
-      tokens.push(createToken(tokenType, content, lineNum, colNum - 1));
+      return;
     }
+    tokens.push(createToken(tokenType, content, lineNum, colNum - 1));
   }
 
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
@@ -145,12 +197,13 @@ export function parseTokens(lines: string[]): ParseTokensResult {
     };
     for (let colNum = 0; colNum < line.length; colNum++) {
       const c = line[colNum];
+      const cc = colNum < line.length - 1 ? line.slice(colNum, colNum + 2) : "";
 
       if (state.inString) {
-        if (c === '"') {
-          if (colNum < line.length - 1 && line[colNum + 1] === '"') {
+        if (c === DOUBLE_QUOTE) {
+          if (cc === DOUBLE_QUOTE + DOUBLE_QUOTE) {
             // Two double quotes is escaped as a double quote.
-            buffer.push('""');
+            buffer.push(cc);
             colNum++;
             continue;
           }
@@ -167,10 +220,10 @@ export function parseTokens(lines: string[]): ParseTokensResult {
         continue;
       }
       if (state.inQuotes) {
-        if (c === "'") {
-          if (colNum < line.length - 1 && line[colNum + 1] === "'") {
+        if (c === SINGLE_QUOTE) {
+          if (cc === SINGLE_QUOTE + SINGLE_QUOTE) {
             // Two single quotes is escaped as a single quote.
-            buffer.push("''");
+            buffer.push(cc);
             colNum++;
             continue;
           }
@@ -181,38 +234,34 @@ export function parseTokens(lines: string[]): ParseTokensResult {
         continue;
       }
 
-      if (c === " ") {
+      if (c === SPACE) {
         pushBuffer(buffer, lineNum, colNum);
         // Ignore whitespace.
         continue;
       }
-      if (colNum < line.length - 1) {
-        // Check length 2 operators before length 1 operators.
-        const op = line.slice(colNum, colNum + 2);
-        if (OPERATORS_DOUBLE.has(op)) {
-          pushBuffer(buffer, lineNum, colNum);
-          tokens.push(createToken(TokenType.OPERATOR, op, lineNum, colNum + 1));
-          colNum++;
-          continue;
-        }
-      }
-      if (OPERATORS_SINGLE.has(c)) {
-        pushBuffer(buffer, lineNum, colNum);
-        tokens.push(createToken(TokenType.OPERATOR, c, lineNum, colNum));
-        continue;
-      }
-      const punctuationTokenType = PUNCTUATION.get(c);
-      if (punctuationTokenType) {
-        pushBuffer(buffer, lineNum, colNum);
-        tokens.push(createToken(punctuationTokenType, c, lineNum, colNum));
-        continue;
-      }
 
-      if (c === '"') {
+      let matched = false;
+      for (const [test, map] of [
+        // Check length 2 operators before length 1 operators.
+        [cc, OPERATORS_DOUBLE],
+        [c, OPERATORS_SINGLE],
+        [c, PUNCTUATION],
+      ] as Array<[string, Map<string, TokenType>]>) {
+        const tokenType = map.get(test);
+        if (!tokenType) continue;
+        matched = true;
+        pushBuffer(buffer, lineNum, colNum);
+        colNum += test.length - 1;
+        tokens.push(createToken(tokenType, test, lineNum, colNum));
+        break;
+      }
+      if (matched) continue;
+
+      if (c === DOUBLE_QUOTE) {
         pushBuffer(buffer, lineNum, colNum);
         // Start string.
         state.inString = true;
-      } else if (c === "'") {
+      } else if (c === SINGLE_QUOTE) {
         pushBuffer(buffer, lineNum, colNum);
         // Start quote.
         state.inQuotes = true;
@@ -235,8 +284,7 @@ export function parseTokens(lines: string[]): ParseTokensResult {
 
   // Sort the values just in case.
   tokens.sort(sortByPositions((token) => token.startPosition));
-  const errors = tokens.filter((token) => token.type === TokenType.ERROR);
-  return { tokens, hasError: errors.length > 0, errors };
+  return tokens;
 }
 
 function createToken(

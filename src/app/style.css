@@ -78,10 +78,7 @@
   }
 }
 
-.trailing-spaces {
-  background-color: rgba(255 0 0 / 0.2);
-}
-
+.token-literal,
 .token-number {
   color: #1155cc;
 }
@@ -94,11 +91,11 @@
   color: #f7981c;
 }
 
-.token-literal {
-  color: #1155cc;
-}
-
 .token-parse_error {
   background-color: rgba(255 0 0 / 0.2);
   text-decoration: spelling-error;
+}
+
+.trailing-spaces {
+  background-color: rgba(255 0 0 / 0.2);
 }

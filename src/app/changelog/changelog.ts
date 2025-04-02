@@ -189,6 +189,23 @@ export const CHANGELOG: Version[] = [
       { text: "Updated token parser to output errors as regular tokens" },
     ],
   },
+  {
+    version: [0, 16],
+    timestamp: "2025-04-01 20:47",
+    description: [
+      {
+        text: "Added token semantic analysis",
+        children: [
+          {
+            text:
+              "Semantically incorrect tokens are now highlighted, such as " +
+              "unclosed parentheses. The specific error messages are not " +
+              "great yet.",
+          },
+        ],
+      },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

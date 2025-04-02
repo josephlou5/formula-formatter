@@ -9,7 +9,8 @@ import {
   useState,
 } from "react";
 
-import { parseTokens, Token } from "../parser/tokens";
+import { parseLines } from "../parser/parse";
+import { Token, TokenType } from "../parser/tokens";
 import { makeClassName } from "../utils/className";
 import {
   convertIndexToPosition,
@@ -162,10 +163,10 @@ export default function Page() {
     );
   }
 
-  const parseTokensResult = parseTokens(lines);
+  const parseResult = parseLines(lines);
   // Group the tokens by line.
   const tokensByLine = new Map<number, Token[]>();
-  for (const token of parseTokensResult.tokens) {
+  for (const token of parseResult.tokens) {
     const lineNum = token.startPosition.lineNum;
     if (!tokensByLine.has(lineNum)) {
       tokensByLine.set(lineNum, []);
@@ -198,11 +199,11 @@ export default function Page() {
           {index + 1}
         </div>
       ))}
-      {parseTokensResult.hasError && (
+      {parseResult.hasError && (
         <div id="errors-container">
           <div className="fw-bold">Errors</div>
           <ul>
-            {parseTokensResult.errors.map((error) => {
+            {parseResult.errors.map((error) => {
               const loc = error.startPosition;
               const lineNum = loc.lineNum + 1;
               let colNum = loc.colNum + 1;
@@ -238,7 +239,7 @@ export default function Page() {
         className={makeClassName({
           "form-control": true,
           "overflow-hidden": true,
-          "is-invalid": parseTokensResult.hasError,
+          "is-invalid": parseResult.hasError,
         })}
         value={text}
         autoComplete="off"
@@ -320,7 +321,13 @@ function StylizedLine({
       lineElements.push(line.slice(index, startCol));
     }
     lineElements.push(
-      <span key={makeKey("token", startCol)} className={`token-${token.type}`}>
+      <span
+        key={makeKey("token", startCol)}
+        className={makeClassName({
+          [`token-${token.type}`]: true,
+          [`token-${TokenType.ERROR}`]: !!token.error,
+        })}
+      >
         {token.content}
       </span>
     );
