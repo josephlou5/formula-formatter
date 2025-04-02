@@ -206,6 +206,14 @@ export const CHANGELOG: Version[] = [
       },
     ],
   },
+  {
+    version: [0, 17],
+    timestamp: "2025-04-02 00:30",
+    description: [
+      { text: "Updated ESLint `prefer-const` rule (was blocking deploy)" },
+      { text: "Updated some parsing logic" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

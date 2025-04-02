@@ -106,6 +106,7 @@ class Parser {
   private tokens: Token[];
 
   parse(): ParseResult {
+    // formula := expressionOrEmpty
     const [endIndex, expression] = this.parseExpressionOrEmpty(0);
     if (endIndex < this.tokens.length && !this.tokens[endIndex].error) {
       this.tokens[endIndex].error = "Parse error: unexpected token";
@@ -193,8 +194,10 @@ class Parser {
         },
       };
       const { rows, semicolonTokens } = term.arrayLiteral!;
-      let endIndex = start + 1;
-      let prevEndIndex = -1;
+      let [endIndex, initialExpressionList] = this.parseExpressionList(
+        start + 1
+      );
+      rows.push(initialExpressionList);
       while (endIndex < this.tokens.length) {
         const token = this.tokens[endIndex];
         if (token.type === TokenType.R_BRACKET) {
@@ -202,20 +205,13 @@ class Parser {
           endIndex++;
           break;
         }
-        if (token.type === TokenType.SEMICOLON) {
-          semicolonTokens.push(token);
-          endIndex++;
-          continue;
-        }
-        const [newEndIndex, expressionList] =
-          this.parseExpressionList(endIndex);
+        if (token.type !== TokenType.SEMICOLON) break;
+        semicolonTokens.push(token);
+        const [newEndIndex, expressionList] = this.parseExpressionList(
+          endIndex + 1
+        );
         rows.push(expressionList);
         endIndex = newEndIndex;
-        if (endIndex === prevEndIndex) {
-          // Can't parse expression list anymore.
-          break;
-        }
-        prevEndIndex = endIndex;
       }
       if (
         term.arrayLiteral!.rightBracketToken === undefined &&
@@ -228,7 +224,7 @@ class Parser {
 
     // Function call.
     // functionCall :=
-    //   TokenType.IDENTIFIER TokenType.L_PAREN argList TokenType.R_PAREN
+    //   TokenType.IDENTIFIER TokenType.L_PAREN expressionList TokenType.R_PAREN
     if (
       startToken.type === TokenType.IDENTIFIER &&
       start < this.tokens.length - 1 &&
@@ -257,24 +253,22 @@ class Parser {
     // Parenthesized expression.
     if (startToken.type === TokenType.L_PAREN) {
       const result = this.parseExpression(start + 1);
-      if (result === null) {
-        // No other term it could be.
-        return null;
+      if (result !== null) {
+        let [endIndex, expression] = result;
+        const term: Term = {
+          parenthesized: { leftParenToken: startToken, expression },
+        };
+        if (
+          endIndex < this.tokens.length &&
+          this.tokens[endIndex].type === TokenType.R_PAREN
+        ) {
+          term.parenthesized!.rightParenToken = this.tokens[endIndex];
+          endIndex++;
+        } else if (!startToken.error) {
+          startToken.error = "Unclosed parentheses";
+        }
+        return [endIndex, term];
       }
-      let [endIndex, expression] = result;
-      const term: Term = {
-        parenthesized: { leftParenToken: startToken, expression },
-      };
-      if (
-        endIndex < this.tokens.length &&
-        this.tokens[endIndex].type === TokenType.R_PAREN
-      ) {
-        term.parenthesized!.rightParenToken = this.tokens[endIndex];
-        endIndex++;
-      } else if (!startToken.error) {
-        startToken.error = "Unclosed parentheses";
-      }
-      return [endIndex, term];
     }
 
     // Literal.
@@ -297,14 +291,7 @@ class Parser {
       start < this.tokens.length - 1 &&
       this.tokens[start + 1].type === TokenType.NUMBER
     ) {
-      const newToken = { ...this.tokens[start + 1] };
-      newToken.startPosition = startToken.startPosition;
-      newToken.content = startToken.content + newToken.content;
-      const errors = [startToken.error, newToken.error].filter((x) => !!x);
-      if (errors.length > 0) {
-        newToken.error = errors.join("; ");
-      }
-      return [start + 2, { literal: newToken }];
+      return [start + 2, { literal: [startToken, this.tokens[start + 1]] }];
     }
 
     return null;
