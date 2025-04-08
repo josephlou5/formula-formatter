@@ -1,4 +1,10 @@
-import { Expression, ExpressionList, ParseResult, Term } from "./parse";
+import {
+  Expression,
+  ExpressionList,
+  ParseResult,
+  Term,
+  TermType,
+} from "./parse";
 import { Token } from "./tokens";
 
 export enum WrapType {
@@ -162,73 +168,75 @@ function buildExpressionList(expressionList: ExpressionList): FormatNode {
 }
 
 function buildTerm(term: Term): FormatNode {
-  const { literal, arrayLiteral, call, parenthesized } = term;
-  if (literal !== undefined) {
-    return FormatNode.makeNodes(
-      (Array.isArray(literal) ? literal : [literal]).map(
-        FormatNode.makeTokenText
-      )
-    );
-  }
-  if (arrayLiteral !== undefined) {
-    const { leftBracketToken, rows, semicolonTokens, rightBracketToken } =
-      arrayLiteral;
-    const nodes = [FormatNode.makeTokenText(leftBracketToken)];
-    if (rows.length > 0) {
-      const indentNodes = [];
-      if (rows[0].expressions.length > 0) {
-        indentNodes.push(buildExpressionList(rows[0]));
-      }
-      for (let i = 0; i < semicolonTokens.length; i++) {
-        indentNodes.push(FormatNode.makeTokenText(semicolonTokens[i]));
-        const row = rows[i + 1];
-        if (row.expressions.length > 0) {
-          indentNodes.push(FormatNode.makeSpaceOrLine());
-          indentNodes.push(buildExpressionList(row));
+  switch (term.type) {
+    case TermType.LITERAL:
+      return FormatNode.makeNodes([FormatNode.makeTokenText(term.literal!)]);
+    case TermType.UNARY_OP: {
+      const { operatorToken, operand } = term.unaryOp!;
+      return FormatNode.makeNodes(
+        [FormatNode.makeTokenText(operatorToken)].concat(buildTerm(operand))
+      );
+    }
+    case TermType.ARRAY_LITERAL: {
+      const { leftBracketToken, rows, semicolonTokens, rightBracketToken } =
+        term.arrayLiteral!;
+      const nodes = [FormatNode.makeTokenText(leftBracketToken)];
+      if (rows.length > 0) {
+        const indentNodes = [];
+        if (rows[0].expressions.length > 0) {
+          indentNodes.push(buildExpressionList(rows[0]));
         }
+        for (let i = 0; i < semicolonTokens.length; i++) {
+          indentNodes.push(FormatNode.makeTokenText(semicolonTokens[i]));
+          const row = rows[i + 1];
+          if (row.expressions.length > 0) {
+            indentNodes.push(FormatNode.makeSpaceOrLine());
+            indentNodes.push(buildExpressionList(row));
+          }
+        }
+        nodes.push(
+          FormatNode.makeLine(),
+          FormatNode.makeIndent(indentNodes),
+          FormatNode.makeLine()
+        );
       }
-      nodes.push(
+      if (rightBracketToken !== undefined) {
+        nodes.push(FormatNode.makeTokenText(rightBracketToken));
+      }
+      return FormatNode.makeGroup(nodes);
+    }
+    case TermType.CALL: {
+      const { functionToken, leftParenToken, args, rightParenToken } =
+        term.call!;
+      const nodes = [
+        FormatNode.makeTokenText(functionToken),
+        FormatNode.makeTokenText(leftParenToken),
+      ];
+      if (args.expressions.length > 0) {
+        nodes.push(
+          FormatNode.makeLine(),
+          FormatNode.makeIndent([buildExpressionList(args)]),
+          FormatNode.makeLine()
+        );
+      }
+      if (rightParenToken !== undefined) {
+        nodes.push(FormatNode.makeTokenText(rightParenToken));
+      }
+      return FormatNode.makeGroup(nodes);
+    }
+    case TermType.PARENTHESIZED: {
+      const { leftParenToken, expression, rightParenToken } =
+        term.parenthesized!;
+      const nodes = [
+        FormatNode.makeTokenText(leftParenToken),
         FormatNode.makeLine(),
-        FormatNode.makeIndent(indentNodes),
-        FormatNode.makeLine()
-      );
-    }
-    if (rightBracketToken !== undefined) {
-      nodes.push(FormatNode.makeTokenText(rightBracketToken));
-    }
-    return FormatNode.makeGroup(nodes);
-  }
-  if (call !== undefined) {
-    const { functionToken, leftParenToken, args, rightParenToken } = call;
-    const nodes = [
-      FormatNode.makeTokenText(functionToken),
-      FormatNode.makeTokenText(leftParenToken),
-    ];
-    if (args.expressions.length > 0) {
-      nodes.push(
+        FormatNode.makeIndent([buildExpression(expression)]),
         FormatNode.makeLine(),
-        FormatNode.makeIndent([buildExpressionList(args)]),
-        FormatNode.makeLine()
-      );
+      ];
+      if (rightParenToken !== undefined) {
+        nodes.push(FormatNode.makeTokenText(rightParenToken));
+      }
+      return FormatNode.makeGroup(nodes);
     }
-    if (rightParenToken !== undefined) {
-      nodes.push(FormatNode.makeTokenText(rightParenToken));
-    }
-    return FormatNode.makeGroup(nodes);
   }
-  if (parenthesized !== undefined) {
-    const { leftParenToken, expression, rightParenToken } = parenthesized;
-    const nodes = [
-      FormatNode.makeTokenText(leftParenToken),
-      FormatNode.makeLine(),
-      FormatNode.makeIndent([buildExpression(expression)]),
-      FormatNode.makeLine(),
-    ];
-    if (rightParenToken !== undefined) {
-      nodes.push(FormatNode.makeTokenText(rightParenToken));
-    }
-    return FormatNode.makeGroup(nodes);
-  }
-  // Shouldn't happen.
-  throw new Error("Invalid term: no cases");
 }

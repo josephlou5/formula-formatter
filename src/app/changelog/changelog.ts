@@ -222,6 +222,13 @@ export const CHANGELOG: Version[] = [
       { text: "Added line width limit ruler" },
     ],
   },
+  {
+    version: [0, 19],
+    timestamp: "2025-04-08 00:38",
+    description: [
+      { text: "Added more supported cases for terms with a unary operator" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

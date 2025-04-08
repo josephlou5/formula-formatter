@@ -37,18 +37,32 @@ export interface ExpressionList {
   commaTokens: Token[];
 }
 
+/** The term types. */
+export enum TermType {
+  LITERAL = "LITERAL",
+  UNARY_OP = "UNARY_OP",
+  ARRAY_LITERAL = "ARRAY_LITERAL",
+  CALL = "CALL",
+  PARENTHESIZED = "PARENTHESIZED",
+}
+
 /**
  * A term.
  *
- * Invariant: Exactly one of these properties will be set.
+ * Invariant: Only the property corresponding with `type` will be set.
  */
 export interface Term {
-  /**
-   * A literal value.
-   *
-   * A unary operator and a literal will result in two tokens.
-   */
-  literal?: Token | [Token, Token];
+  /** The type of the term. */
+  type: TermType;
+  /** A literal value. */
+  literal?: Token;
+  /** A unary operator applied to a term. */
+  unaryOp?: {
+    /** The unary operator. */
+    operatorToken: Token;
+    /** The operand. This can only be certain terms. */
+    operand: Term;
+  };
   /** An array literal. */
   arrayLiteral?: {
     /** The opening left bracket. */
@@ -232,6 +246,7 @@ function parseTerm(state: ParseState, start: number): [number, Term] | null {
   //   TokenType.R_BRACKET
   if (startToken.type === TokenType.L_BRACKET) {
     const term: Term = {
+      type: TermType.ARRAY_LITERAL,
       arrayLiteral: {
         leftBracketToken: startToken,
         rows: [],
@@ -284,6 +299,7 @@ function parseTerm(state: ParseState, start: number): [number, Term] | null {
   ) {
     let [endIndex, expressionList] = parseExpressionList(state, start + 2);
     const term: Term = {
+      type: TermType.CALL,
       call: {
         functionToken: startToken,
         leftParenToken: state.tokens[start + 1],
@@ -311,6 +327,7 @@ function parseTerm(state: ParseState, start: number): [number, Term] | null {
     if (result !== null) {
       let [endIndex, expression] = result;
       const term: Term = {
+        type: TermType.PARENTHESIZED,
         parenthesized: { leftParenToken: startToken, expression },
       };
       if (
@@ -339,14 +356,41 @@ function parseTerm(state: ParseState, start: number): [number, Term] | null {
       TokenType.ERROR,
     ].includes(startToken.type)
   ) {
-    return [start + 1, { literal: startToken }];
+    return [start + 1, { type: TermType.LITERAL, literal: startToken }];
   }
+
+  // Unary operator.
   if (
     UNARY_OPERATORS.includes(startToken.type) &&
-    start < state.tokens.length - 1 &&
-    state.tokens[start + 1].type === TokenType.NUMBER
+    start < state.tokens.length - 1
   ) {
-    return [start + 2, { literal: [startToken, state.tokens[start + 1]] }];
+    // Get the operand term.
+    const operandTerm = parseTerm(state, start + 1);
+    if (operandTerm !== null) {
+      const [endIndex, operand] = operandTerm;
+      // Only allow certain terms to be the operand.
+      if (
+        (operand.type === TermType.LITERAL &&
+          [
+            TokenType.LITERAL,
+            TokenType.IDENTIFIER,
+            TokenType.NUMBER,
+            TokenType.RANGE,
+          ].includes(operand.literal!.type)) ||
+        [TermType.CALL, TermType.PARENTHESIZED].includes(operand.type)
+      ) {
+        return [
+          endIndex,
+          {
+            type: TermType.UNARY_OP,
+            unaryOp: { operatorToken: startToken, operand },
+          },
+        ];
+      }
+      // Found a valid term, but this operator token is not valid for the term
+      // type.
+      setErrorTypeIfNull(startToken, TokenErrorType.INVALID_UNARY_OPERAND);
+    }
   }
 
   return null;

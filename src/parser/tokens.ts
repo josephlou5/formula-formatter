@@ -46,6 +46,7 @@ export enum TokenErrorType {
   UNCLOSED_ARRAY = "UNCLOSED_ARRAY",
   UNCLOSED_FUNCTION_CALL = "UNCLOSED_FUNCTION_CALL",
   UNCLOSED_PARENTHESES = "UNCLOSED_PARENTHESES",
+  INVALID_UNARY_OPERAND = "INVALID_UNARY_OPERAND",
   UNEXPECTED_TOKEN = "UNEXPECTED_TOKEN",
 }
 
@@ -53,6 +54,7 @@ export enum TokenErrorType {
 export function tokenErrorMessage(
   type: TokenErrorType | null | undefined
 ): string {
+  if (type == null) return "Parse error";
   switch (type) {
     case TokenErrorType.UNCLOSED_STRING:
       return "Unclosed string";
@@ -66,10 +68,10 @@ export function tokenErrorMessage(
       return "Unclosed function call";
     case TokenErrorType.UNCLOSED_PARENTHESES:
       return "Unclosed parentheses";
+    case TokenErrorType.INVALID_UNARY_OPERAND:
+      return "Invalid unary operand";
     case TokenErrorType.UNEXPECTED_TOKEN:
       return "Parse error: unexpected token";
-    default:
-      return "Parse error";
   }
 }
 
