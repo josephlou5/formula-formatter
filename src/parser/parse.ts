@@ -99,8 +99,13 @@ export interface ParseResult {
    * or `token.errorType` has a value). Only populated if `hasError` is true.
    */
   errors: Token[];
-  /** Whether `expression` is incomplete due to parsing errors. */
-  expressionIncomplete: boolean;
+  /**
+   * Whether `expression` can be formatted.
+   *
+   * If there was an unrecoverable parsing error, such as an unclosed string,
+   * this will be false.
+   */
+  canFormatExpression: boolean;
   /** The expression. If null, the input was all whitespace. */
   expression: Expression | null;
 }
@@ -112,23 +117,34 @@ interface ParseState {
 
 /** Parses the given lines. */
 export function parseLines(lines: string[]): ParseResult {
-  const state = { tokens: parseTokens(lines) };
+  const state: ParseState = { tokens: parseTokens(lines) };
   // formula := expressionOrEmpty
   const [endIndex, expression] = parseExpressionOrEmpty(state, 0);
-  if (
-    endIndex < state.tokens.length &&
-    state.tokens[endIndex].errorType === undefined
-  ) {
-    state.tokens[endIndex].errorType = TokenErrorType.UNEXPECTED_TOKEN;
+  if (endIndex < state.tokens.length) {
+    setErrorTypeIfNull(state.tokens[endIndex], TokenErrorType.UNEXPECTED_TOKEN);
   }
-  const errors = state.tokens.filter(
-    (token) => token.type === TokenType.ERROR || token.errorType !== undefined
-  );
+  let canFormatExpression = endIndex >= state.tokens.length;
+  const errors = [];
+  for (const token of state.tokens) {
+    if (token.type === TokenType.ERROR || token.errorType !== undefined) {
+      errors.push(token);
+      if (
+        token.errorType &&
+        [
+          TokenErrorType.UNCLOSED_STRING,
+          TokenErrorType.UNCLOSED_QUOTES,
+        ].includes(token.errorType)
+      ) {
+        // These errors are unrecoverable in terms of formatting.
+        canFormatExpression = false;
+      }
+    }
+  }
   return {
     tokens: state.tokens,
     hasError: errors.length > 0,
     errors,
-    expressionIncomplete: endIndex < state.tokens.length,
+    canFormatExpression,
     expression,
   };
 }

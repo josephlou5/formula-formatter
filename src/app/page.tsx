@@ -9,9 +9,11 @@ import {
   useState,
 } from "react";
 
+import { formatLines } from "../parser/format";
 import { parseLines } from "../parser/parse";
 import { Token, tokenErrorMessage, TokenType } from "../parser/tokens";
 import { makeClassName } from "../utils/className";
+import { LINE_WIDTH, TAB_SPACES } from "../utils/constants";
 import {
   convertIndexToPosition,
   convertPositionToIndex,
@@ -20,7 +22,7 @@ import {
 
 import "./style.css";
 
-const TAB_SPACES = 2;
+const FORMAT_KEYBINDS = new Set(["M-KeyS", "A-S-KeyF", "M-A-KeyL"]);
 
 export default function Page() {
   const [text, setText] = useState("");
@@ -81,7 +83,7 @@ export default function Page() {
       event.ctrlKey ? "C-" : "",
       event.altKey ? "A-" : "",
       event.shiftKey ? "S-" : "",
-      event.key,
+      event.code,
     ].join("");
     if (["Tab", "S-Tab"].includes(key)) {
         if (!textareaRef.current) return;
@@ -145,6 +147,14 @@ export default function Page() {
         selectionRef.current.end = endPos;
 
         setLines(newLines);
+      return;
+    }
+    if (FORMAT_KEYBINDS.has(key)) {
+      event.preventDefault();
+      if (parseResult.canFormatExpression) {
+        setLines(formatLines(parseResult));
+      }
+      return;
       }
   }
 
@@ -233,6 +243,10 @@ export default function Page() {
           />
         </div>
       ))}
+      <div
+        className="line-width-ruler"
+        style={{ width: `${LINE_WIDTH}ch` }}
+      ></div>
       <textarea
         ref={textareaRef}
         id="editor"

@@ -65,6 +65,24 @@
 
 /** Styles for text overlay. */
 
+.line-width-ruler {
+  /* Right on top of #editor. */
+  grid-column: 2;
+  grid-row: 2 / -1;
+  /* Make ruler line up with .indent-level. */
+  margin-left: calc(0.25rem + 2px);
+  position: relative;
+
+  &::after {
+    border-right: 1px solid rgba(0 0 0 / 0.1);
+    content: "";
+    height: 100%;
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+}
+
 .indent-level {
   position: relative;
 

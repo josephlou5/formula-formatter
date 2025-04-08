@@ -214,6 +214,14 @@ export const CHANGELOG: Version[] = [
       { text: "Updated some parsing logic" },
     ],
   },
+  {
+    version: [0, 18],
+    timestamp: "2025-04-07 23:59",
+    description: [
+      { text: "Added preliminary formatter" },
+      { text: "Added line width limit ruler" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
