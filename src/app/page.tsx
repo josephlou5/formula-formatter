@@ -10,7 +10,7 @@ import {
 } from "react";
 
 import { parseLines } from "../parser/parse";
-import { Token, TokenType } from "../parser/tokens";
+import { Token, tokenErrorMessage, TokenType } from "../parser/tokens";
 import { makeClassName } from "../utils/className";
 import {
   convertIndexToPosition,
@@ -213,7 +213,7 @@ export default function Page() {
               }
               return (
                 <li key={`error-${loc.lineNum}-${loc.colNum}`}>
-                  Ln{lineNum}, Col{colNum}: {error.error}
+                  Ln{lineNum}, Col{colNum}: {tokenErrorMessage(error.errorType)}
                 </li>
               );
             })}
@@ -325,7 +325,7 @@ function StylizedLine({
         key={makeKey("token", startCol)}
         className={makeClassName({
           [`token-${token.type}`]: true,
-          [`token-${TokenType.ERROR}`]: !!token.error,
+          [`token-${TokenType.ERROR}`]: !!token.errorType,
         })}
       >
         {token.content}

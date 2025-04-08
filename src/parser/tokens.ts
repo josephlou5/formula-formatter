@@ -5,7 +5,7 @@ export enum TokenType {
   // Unary operators.
   PLUS = "plus",
   MINUS = "minus",
-  // Binary operators.
+  // Other operators.
   MULTIPLY = "multiply",
   DIVIDE = "divide",
   XOR = "xor",
@@ -33,6 +33,44 @@ export enum TokenType {
   RANGE = "range",
 
   ERROR = "parse_error",
+}
+
+/** Possible token errors. */
+export enum TokenErrorType {
+  // Tokenization errors.
+  UNCLOSED_STRING = "UNCLOSED_STRING",
+  UNCLOSED_QUOTES = "UNCLOSED_QUOTES",
+  UNKNOWN_TOKEN = "UNKNOWN_TOKEN",
+
+  // Parse errors.
+  UNCLOSED_ARRAY = "UNCLOSED_ARRAY",
+  UNCLOSED_FUNCTION_CALL = "UNCLOSED_FUNCTION_CALL",
+  UNCLOSED_PARENTHESES = "UNCLOSED_PARENTHESES",
+  UNEXPECTED_TOKEN = "UNEXPECTED_TOKEN",
+}
+
+/** Converts a token error type to an error message. */
+export function tokenErrorMessage(
+  type: TokenErrorType | null | undefined
+): string {
+  switch (type) {
+    case TokenErrorType.UNCLOSED_STRING:
+      return "Unclosed string";
+    case TokenErrorType.UNCLOSED_QUOTES:
+      return "Unclosed quotes";
+    case TokenErrorType.UNKNOWN_TOKEN:
+      return "Parse error: unknown token";
+    case TokenErrorType.UNCLOSED_ARRAY:
+      return "Unclosed array literal";
+    case TokenErrorType.UNCLOSED_FUNCTION_CALL:
+      return "Unclosed function call";
+    case TokenErrorType.UNCLOSED_PARENTHESES:
+      return "Unclosed parentheses";
+    case TokenErrorType.UNEXPECTED_TOKEN:
+      return "Parse error: unexpected token";
+    default:
+      return "Parse error";
+  }
 }
 
 /** The unary operator tokens. */
@@ -132,8 +170,8 @@ export interface Token {
   startPosition: Position;
   /** The end position of the token (inclusive). */
   endPosition: Position;
-  /** A description of the error, if `type` is `TokenType.ERROR`. */
-  error?: string;
+  /** The error type, if `type` is `TokenType.ERROR`. */
+  errorType?: TokenErrorType;
 }
 
 const SPACE = " ";
@@ -177,7 +215,12 @@ export function parseTokens(lines: string[]): Token[] {
     } else {
       // Unknown token.
       tokens.push(
-        createError("Parse error: unknown token", content, lineNum, colNum - 1)
+        createErrorToken(
+          TokenErrorType.UNKNOWN_TOKEN,
+          content,
+          lineNum,
+          colNum - 1
+        )
       );
       return;
     }
@@ -270,8 +313,10 @@ export function parseTokens(lines: string[]): Token[] {
     }
     if (state.inString || state.inQuotes) {
       tokens.push(
-        createError(
-          "Unclosed " + (state.inString ? "string" : "quotes"),
+        createErrorToken(
+          state.inString
+            ? TokenErrorType.UNCLOSED_STRING
+            : TokenErrorType.UNCLOSED_QUOTES,
           buffer.join(""),
           lineNum,
           line.length - 1
@@ -301,15 +346,15 @@ function createToken(
   };
 }
 
-function createError(
-  message: string,
+function createErrorToken(
+  errorType: TokenErrorType,
   content: string,
   lineNum: number,
   endCol: number
 ): Token {
-  const errorToken = createToken(TokenType.ERROR, content, lineNum, endCol);
-  errorToken.error = message;
-  return errorToken;
+  const error = createToken(TokenType.ERROR, content, lineNum, endCol);
+  error.errorType = errorType;
+  return error;
 }
 
 function clearArray<T>(array: T[]) {
