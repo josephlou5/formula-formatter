@@ -65,7 +65,7 @@
 
 /** Styles for text overlay. */
 
-.line-width-ruler {
+#line-width-ruler {
   /* Right on top of #editor. */
   grid-column: 2;
   grid-row: 2 / -1;

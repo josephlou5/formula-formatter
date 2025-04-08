@@ -229,6 +229,13 @@ export const CHANGELOG: Version[] = [
       { text: "Added more supported cases for terms with a unary operator" },
     ],
   },
+  {
+    version: [0, 20],
+    timestamp: "2025-04-08 09:57",
+    description: [
+      { text: "Added user preferences to configure tab spaces and line width" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

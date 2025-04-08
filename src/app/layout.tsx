@@ -1,6 +1,7 @@
 import "bootstrap/dist/css/bootstrap.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
-import { Breadcrumbs, Footer } from "./_layout";
+import { BootstrapJs, Breadcrumbs, Footer } from "./_layout";
 import { metadataForPage } from "./metadata";
 
 export const metadata = metadataForPage();
@@ -13,6 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <BootstrapJs />
       <body>
         <div className="d-flex flex-column gap-2 vh-100 p-2">
           <div className="flex-grow-1 d-flex flex-column">

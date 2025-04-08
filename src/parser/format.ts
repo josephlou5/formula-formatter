@@ -15,16 +15,23 @@ import {
   FormatNodeType,
   WrapType,
 } from "./formatNode";
-import { LINE_WIDTH, TAB_SPACES } from "../utils/constants";
+import { UserPreferences } from "../app/preferences";
+
+const SPACE = " ";
 
 /**
  * Formats the given parse result as lines.
  *
  * Assumes `parseResult.canFormatExpression` is true.
  */
-export function formatLines(parseResult: ParseResult): string[] {
+export function formatLines(
+  parseResult: ParseResult,
+  userPreferences: UserPreferences
+): string[] {
   const node = buildFormatNode(parseResult);
   const state: FormatState = {
+    LINE_WIDTH: userPreferences.lineWidth,
+    TAB: SPACE.repeat(userPreferences.tabSpaces),
     linesBuffer: [[]],
     indentLevel: 0,
     // Start first line width as 1 to account for the inserted equals sign.
@@ -34,10 +41,12 @@ export function formatLines(parseResult: ParseResult): string[] {
   return state.linesBuffer.map((line) => line.join(""));
 }
 
-const SPACE = " ";
-const TAB = SPACE.repeat(TAB_SPACES);
-
 interface FormatState {
+  // Constants.
+  LINE_WIDTH: number;
+  TAB: string;
+
+  // Mutable state.
   linesBuffer: string[][];
   indentLevel: number;
   currLineWidth: number;
@@ -46,7 +55,7 @@ interface FormatState {
 function formatNode(state: FormatState, node: FormatNode, wrapType: WrapType) {
   switch (node.type) {
     case FormatNodeType.GROUP:
-      if (state.currLineWidth + node.width > LINE_WIDTH) {
+      if (state.currLineWidth + node.width > state.LINE_WIDTH) {
         // Propagate wrapped status to children.
         wrapType = WrapType.ENABLE;
       } else {
@@ -61,7 +70,7 @@ function formatNode(state: FormatState, node: FormatNode, wrapType: WrapType) {
       if (needsIndent) {
         // Indent.
         state.indentLevel++;
-        insertText(state, TAB);
+        insertText(state, state.TAB);
       }
       // Process child nodes.
       node.getNodes().forEach((child) => formatNode(state, child, wrapType));
@@ -99,7 +108,7 @@ function insertText(state: FormatState, text: string) {
 
 function insertLine(state: FormatState) {
   // Start new line with the proper indentation level.
-  const newLineTab = TAB.repeat(state.indentLevel);
+  const newLineTab = state.TAB.repeat(state.indentLevel);
   state.linesBuffer.push([newLineTab]);
   state.currLineWidth = newLineTab.length;
 }

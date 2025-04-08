@@ -9,11 +9,15 @@ import {
   useState,
 } from "react";
 
+import {
+  DEFAULT_USER_PREFERENCES,
+  PreferencesPane,
+  UserPreferences,
+} from "./preferences";
 import { formatLines } from "../parser/format";
 import { parseLines } from "../parser/parse";
 import { Token, tokenErrorMessage, TokenType } from "../parser/tokens";
 import { makeClassName } from "../utils/className";
-import { LINE_WIDTH, TAB_SPACES } from "../utils/constants";
 import {
   convertIndexToPosition,
   convertPositionToIndex,
@@ -25,6 +29,17 @@ import "./style.css";
 const FORMAT_KEYBINDS = new Set(["M-KeyS", "A-S-KeyF", "M-A-KeyL"]);
 
 export default function Page() {
+  const [userPreferences, setUserPreferencesRaw] = useState<UserPreferences>({
+    ...DEFAULT_USER_PREFERENCES,
+  });
+
+  function setUserPreferences({ tabSpaces, lineWidth }: UserPreferences) {
+    setUserPreferencesRaw({
+      tabSpaces: Math.min(Math.max(1, tabSpaces), 8),
+      lineWidth: Math.max(10, lineWidth),
+    });
+  }
+
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const selectionRef = useRef<{ start: Position; end: Position }>({
@@ -118,10 +133,10 @@ export default function Page() {
             if (line[i] !== " ") break;
             numSpaces++;
           }
-          let numTabs = Math.floor(numSpaces / TAB_SPACES);
+        let numTabs = Math.floor(numSpaces / userPreferences.tabSpaces);
           if (key === "S-Tab") {
             // Dedent.
-            if (numSpaces % TAB_SPACES === 0) {
+          if (numSpaces % userPreferences.tabSpaces === 0) {
               // Exact number of tabs, so decrease indentation level.
               numTabs = Math.max(0, numTabs - 1);
             } else {
@@ -132,7 +147,8 @@ export default function Page() {
             numTabs++;
           }
           newLines[lineNum] =
-            " ".repeat(TAB_SPACES * numTabs) + line.slice(numSpaces);
+          " ".repeat(userPreferences.tabSpaces * numTabs) +
+          line.slice(numSpaces);
 
           const lengthDelta = newLines[lineNum].length - prevLength;
           if (lineNum === startPos.lineNum) {
@@ -152,7 +168,7 @@ export default function Page() {
     if (FORMAT_KEYBINDS.has(key)) {
       event.preventDefault();
       if (parseResult.canFormatExpression) {
-        setLines(formatLines(parseResult));
+        setLines(formatLines(parseResult, userPreferences));
       }
       return;
       }
@@ -185,6 +201,12 @@ export default function Page() {
   }
 
   return (
+    <>
+      <PreferencesPane
+        userPreferences={userPreferences}
+        setUserPreferences={setUserPreferences}
+      ></PreferencesPane>
+
     <div
       id="editor-container"
       className="flex-grow-1 d-grid column-gap-2 mb-1"
@@ -223,7 +245,8 @@ export default function Page() {
               }
               return (
                 <li key={`error-${loc.lineNum}-${loc.colNum}`}>
-                  Ln{lineNum}, Col{colNum}: {tokenErrorMessage(error.errorType)}
+                    Ln{lineNum}, Col{colNum}:{" "}
+                    {tokenErrorMessage(error.errorType)}
                 </li>
               );
             })}
@@ -240,12 +263,13 @@ export default function Page() {
             lineNum={index}
             line={line}
             lineTokens={tokensByLine.get(index) ?? []}
+              userPreferences={userPreferences}
           />
         </div>
       ))}
       <div
-        className="line-width-ruler"
-        style={{ width: `${LINE_WIDTH}ch` }}
+          id="line-width-ruler"
+          style={{ width: `min(${userPreferences.lineWidth}ch, 100%)` }}
       ></div>
       <textarea
         ref={textareaRef}
@@ -263,6 +287,7 @@ export default function Page() {
         onSelect={handleSelect}
       ></textarea>
     </div>
+    </>
   );
 }
 
@@ -271,10 +296,12 @@ function StylizedLine({
   lineNum,
   line,
   lineTokens,
+  userPreferences,
 }: {
   lineNum: number;
   line: string;
   lineTokens: Token[];
+  userPreferences: UserPreferences;
 }) {
   function makeKey(key: string, index?: number) {
     let fullKey = `line-${lineNum}-${key}`;
@@ -318,7 +345,10 @@ function StylizedLine({
 
   // Leading tabs.
   while (index < numLeadingSpaces) {
-    const endIndex = Math.min(index + TAB_SPACES, numLeadingSpaces);
+    const endIndex = Math.min(
+      index + userPreferences.tabSpaces,
+      numLeadingSpaces
+    );
     lineElements.push(
       <span key={makeKey("indent", index)} className="indent-level">
         {line.slice(index, endIndex)}

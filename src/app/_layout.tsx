@@ -5,11 +5,22 @@ import {
   useSelectedLayoutSegment,
   useSelectedLayoutSegments,
 } from "next/navigation";
+import { useEffect } from "react";
 
 import { getCurrentVersion } from "./changelog/changelog";
 import { BASE_PATH } from "./metadata";
+import { PREFERENCES_PANE_ID } from "./preferences";
 
 const NOT_FOUND_SEGMENT = "/_not-found";
+
+/** Dynamically imports Bootstrap JS on the client side. */
+export function BootstrapJs() {
+  useEffect(() => {
+    import("bootstrap");
+  }, []);
+
+  return null;
+}
 
 /** Displays breadcrumbs for page navigation. */
 export function Breadcrumbs() {
@@ -25,41 +36,53 @@ export function Breadcrumbs() {
 
   const href: string[] = [];
   return (
-    <nav aria-label="breadcrumb">
-      <ol className="breadcrumb mb-2">
-        <li className="breadcrumb-item">
-          <Link href="../">Home</Link>
-        </li>
-        {segments.map((segment, i) => {
-          const segmentTitle = segment
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-          if (i === segments.length - 1) {
-            // Active page and last breadcrumb.
+    <div className="d-flex justify-content-between">
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb mb-2">
+          <li className="breadcrumb-item">
+            <Link href="../">Home</Link>
+          </li>
+          {segments.map((segment, i) => {
+            const segmentTitle = segment
+              .split("-")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ");
+            if (i === segments.length - 1) {
+              // Active page and last breadcrumb.
+              return (
+                <li
+                  key={i}
+                  className="breadcrumb-item active"
+                  aria-current="page"
+                >
+                  {segmentTitle}
+                </li>
+              );
+            }
+            if (i > 0) {
+              // Skip the base path in the link, since the links are built
+              // relative to it already.
+              href.push(segment);
+            }
             return (
-              <li
-                key={i}
-                className="breadcrumb-item active"
-                aria-current="page"
-              >
-                {segmentTitle}
+              <li key={i} className="breadcrumb-item">
+                <Link href={"/" + href.join("/")}>{segmentTitle}</Link>
               </li>
             );
-          }
-          if (i > 0) {
-            // Skip the base path in the link, since the links are built
-            // relative to it already.
-            href.push(segment);
-          }
-          return (
-            <li key={i} className="breadcrumb-item">
-              <Link href={"/" + href.join("/")}>{segmentTitle}</Link>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+          })}
+        </ol>
+      </nav>
+
+      <button
+        type="button"
+        className="btn"
+        data-bs-toggle="offcanvas"
+        data-bs-target={`#${PREFERENCES_PANE_ID}`}
+        aria-controls={PREFERENCES_PANE_ID}
+      >
+        <i className="bi bi-gear"></i>
+      </button>
+    </div>
   );
 }
 
