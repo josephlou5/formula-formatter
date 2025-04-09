@@ -243,6 +243,23 @@ export const CHANGELOG: Version[] = [
       { text: "Removed indent level vertical lines for first line" },
     ],
   },
+  {
+    version: [0, 21],
+    timestamp: "2025-04-08 21:14",
+    description: [
+      {
+        text: "Added logic to remove leading equals signs from the first line",
+        children: [
+          {
+            text:
+              "This will make it easier to paste in formulas from Google " +
+              "Sheets without needing to mind the equals sign. Previously " +
+              "this would result in an immediate parse error.",
+          },
+        ],
+      },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

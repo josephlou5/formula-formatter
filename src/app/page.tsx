@@ -59,6 +59,15 @@ export default function Page() {
   });
 
   function setLines(lines: string[]) {
+    if (lines.length > 0) {
+      // Remove all the leading equals signs in the first line.
+      const firstLine = lines[0];
+      let index = 0;
+      while (index < firstLine.length && firstLine[index] === "=") {
+        index++;
+      }
+      lines[0] = firstLine.slice(index);
+    }
     setText(lines.join("\n"));
   }
 
