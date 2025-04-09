@@ -244,7 +244,7 @@ export const CHANGELOG: Version[] = [
     ],
   },
   {
-    version: [0, 21],
+    version: [0, 22],
     timestamp: "2025-04-08 21:14",
     description: [
       {
@@ -259,6 +259,11 @@ export const CHANGELOG: Version[] = [
         ],
       },
     ],
+  },
+  {
+    version: [0, 23],
+    timestamp: "2025-04-09 09:04",
+    description: [{ text: "Updated preferences inputs" }],
   },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 

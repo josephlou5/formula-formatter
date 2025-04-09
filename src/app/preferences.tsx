@@ -28,10 +28,7 @@ export function PreferencesPane({
     setter: (x: number) => void
   ) {
     return (event: ChangeEvent<HTMLInputElement>) => {
-      const num = !Number.isNaN(event.currentTarget.valueAsNumber)
-        ? event.currentTarget.valueAsNumber
-        : defaultVal;
-      setter(num);
+      setter(getInts(event.currentTarget.value, defaultVal));
     };
   }
 
@@ -41,6 +38,9 @@ export function PreferencesPane({
   const handleLineWidthChange = handleNumberInputChange(80, (lineWidth) =>
     setUserPreferences({ ...userPreferences, lineWidth })
   );
+  function handleLineWidthDelta(delta: number) {
+    setUserPreferences({ ...userPreferences, lineWidth: lineWidth + delta });
+  }
 
   function handleResetDefaults() {
     setUserPreferences({ ...DEFAULT_USER_PREFERENCES });
@@ -74,19 +74,23 @@ export function PreferencesPane({
       <div className="offcanvas-body">
         <div className="mb-3">
           <label htmlFor={tabSpacesInputId} className="form-label">
-            Tab Spaces
+            Tab Spaces: {tabSpaces}
           </label>
-          <input
-            type="number"
-            id={tabSpacesInputId}
-            className="form-control"
-            value={tabSpaces}
-            min="1"
-            max="8"
-            step="1"
-            aria-describedby={tabSpacesDescId}
-            onChange={handleTabSpacesChange}
-          />
+          <div className="d-flex gap-3">
+            1
+            <input
+              id={tabSpacesInputId}
+              type="range"
+              className="form-range"
+              value={tabSpaces}
+              min="1"
+              max="8"
+              step="1"
+              aria-describedby={tabSpacesDescId}
+              onChange={handleTabSpacesChange}
+            />
+            8
+          </div>
           <div id={tabSpacesDescId} className="form-text">
             The number of spaces in an indent.
           </div>
@@ -95,16 +99,32 @@ export function PreferencesPane({
           <label htmlFor={lineWidthInputId} className="form-label">
             Line Width
           </label>
-          <input
-            type="number"
-            id={lineWidthInputId}
-            className="form-control"
-            value={lineWidth}
-            min="10"
-            step="1"
-            aria-describedby={lineWidthDescId}
-            onChange={handleLineWidthChange}
-          />
+          <div className="input-group">
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => handleLineWidthDelta(-1)}
+            >
+              <i className="bi bi-dash-lg"></i>
+            </button>
+            <input
+              id={lineWidthInputId}
+              type="text"
+              className="form-control"
+              value={lineWidth}
+              inputMode="numeric"
+              pattern="[0-9]"
+              aria-describedby={lineWidthDescId}
+              onChange={handleLineWidthChange}
+            />
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => handleLineWidthDelta(1)}
+            >
+              <i className="bi bi-plus-lg"></i>
+            </button>
+          </div>
           <div id={lineWidthDescId} className="form-text">
             The max width of a line.
           </div>
@@ -121,4 +141,18 @@ export function PreferencesPane({
       </div>
     </div>
   );
+}
+
+/** Returns all the integers in the string as a number. */
+function getInts(str: string, defaultValue = 0): number {
+  let sawDigit = false;
+  let num = 0;
+  for (const char of str) {
+    const digit = parseInt(char);
+    if (isNaN(digit)) continue;
+    sawDigit = true;
+    num = num * 10 + digit;
+  }
+  if (!sawDigit) return defaultValue;
+  return num;
 }
