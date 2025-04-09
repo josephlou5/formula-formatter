@@ -335,7 +335,7 @@ function StylizedLine({
     numTrailingSpaces++;
   }
   let numLeadingSpaces = 0;
-  if (numTrailingSpaces < line.length) {
+  if (lineNum !== 0 && numTrailingSpaces < line.length) {
     for (let i = 0; i < line.length; i++) {
     if (line[i] !== " ") break;
     numLeadingSpaces++;

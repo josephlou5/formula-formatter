@@ -236,6 +236,13 @@ export const CHANGELOG: Version[] = [
       { text: "Added user preferences to configure tab spaces and line width" },
     ],
   },
+  {
+    version: [0, 21],
+    timestamp: "2025-04-08 21:03",
+    description: [
+      { text: "Removed indent level vertical lines for first line" },
+    ],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */
