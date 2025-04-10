@@ -1,4 +1,4 @@
-import { metadataForPage } from "../metadata";
+import { GITHUB_LINK, metadataForPage } from "../metadata";
 import { CHANGELOG, Description, versionToString } from "./changelog";
 
 export const metadata = metadataForPage("Changelog");
@@ -8,6 +8,14 @@ export default function Page() {
   return (
     <>
       <div className="h1">Changelog</div>
+
+      <div className="mb-3">
+        See the source code at{" "}
+        <a href={GITHUB_LINK} target="_blank">
+          {GITHUB_LINK}
+        </a>
+        .
+      </div>
 
       {CHANGELOG.map((version, i) => (
         <div key={i} className="mb-2">

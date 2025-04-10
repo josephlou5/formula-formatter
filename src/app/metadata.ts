@@ -5,6 +5,8 @@ export const TITLE = "Formula Formatter";
 /** GitHub repo name (which becomes the base path). */
 export const BASE_PATH = "formula-formatter";
 
+export const GITHUB_LINK = `https://github.com/josephlou5/${BASE_PATH}`;
+
 /** Creates Metadata for a page. */
 export function metadataForPage(pageTitle: string = ""): Metadata {
   let title = TITLE;

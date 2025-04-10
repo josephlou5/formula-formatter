@@ -265,6 +265,11 @@ export const CHANGELOG: Version[] = [
     timestamp: "2025-04-09 09:04",
     description: [{ text: "Updated preferences inputs" }],
   },
+  {
+    version: [0, 24],
+    timestamp: "2025-04-10 00:16",
+    description: [{ text: "Added about page" }],
+  },
 ].sort((v1, v2) => -cmpVersions(v1.version, v2.version));
 
 /** Returns the current version number as a string. */

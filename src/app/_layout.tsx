@@ -8,7 +8,7 @@ import {
 import { useEffect } from "react";
 
 import { getCurrentVersion } from "./changelog/changelog";
-import { BASE_PATH } from "./metadata";
+import { BASE_PATH, GITHUB_LINK } from "./metadata";
 import { PREFERENCES_PANE_ID } from "./preferences";
 
 const NOT_FOUND_SEGMENT = "/_not-found";
@@ -73,15 +73,26 @@ export function Breadcrumbs() {
         </ol>
       </nav>
 
-      <button
-        type="button"
-        className="btn"
-        data-bs-toggle="offcanvas"
-        data-bs-target={`#${PREFERENCES_PANE_ID}`}
-        aria-controls={PREFERENCES_PANE_ID}
-      >
-        <i className="bi bi-gear"></i>
-      </button>
+      <div>
+        <Link href="/about" className="btn p-0">
+          <i
+            className="bi bi-question-circle"
+            style={{ fontSize: "1.2em" }}
+          ></i>
+        </Link>
+        {segments.length === 1 && (
+          // Only show preferences button on actual formatter page.
+          <button
+            type="button"
+            className="btn p-0 ms-2 me-1"
+            data-bs-toggle="offcanvas"
+            data-bs-target={`#${PREFERENCES_PANE_ID}`}
+            aria-controls={PREFERENCES_PANE_ID}
+          >
+            <i className="bi bi-gear" style={{ fontSize: "1.2em" }}></i>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -90,8 +101,11 @@ export function Breadcrumbs() {
 export function Footer() {
   const segment = useSelectedLayoutSegment();
   if (segment === NOT_FOUND_SEGMENT) return <></>;
+  if (segment === "changelog") {
+    // Don't show the changelog footer in the changelog page.
+    return <></>;
+  }
 
-  const githubLink = `https://github.com/josephlou5/${BASE_PATH}`;
   return (
     <div className="text-secondary" style={{ fontSize: "0.8em" }}>
       Version:{" "}
@@ -99,8 +113,8 @@ export function Footer() {
         {getCurrentVersion()}
       </Link>
       . See the source code at{" "}
-      <a href={githubLink} target="_blank">
-        {githubLink}
+      <a href={GITHUB_LINK} target="_blank">
+        {GITHUB_LINK}
       </a>
       .
     </div>

@@ -74,7 +74,7 @@
   position: relative;
 
   &::after {
-    border-right: 1px solid rgba(0 0 0 / 0.1);
+    border-right: 1px solid rgb(0 0 0 / 0.1);
     content: "";
     height: 100%;
     position: absolute;
@@ -87,7 +87,7 @@
   position: relative;
 
   &::before {
-    border-left: 1px solid rgba(0 0 0 / 0.2);
+    border-left: 1px solid rgb(0 0 0 / 0.2);
     content: "";
     height: 100%;
     position: absolute;
@@ -110,10 +110,10 @@
 }
 
 .token-parse_error {
-  background-color: rgba(255 0 0 / 0.2);
+  background-color: rgb(255 0 0 / 0.2);
   text-decoration: spelling-error;
 }
 
 .trailing-spaces {
-  background-color: rgba(255 0 0 / 0.2);
+  background-color: rgb(255 0 0 / 0.2);
 }
